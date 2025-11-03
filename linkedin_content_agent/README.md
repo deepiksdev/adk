@@ -16,9 +16,10 @@ A comprehensive AI-powered agent system for creating engaging LinkedIn content. 
 - Professional formatting and structure
 
 ### 🎨 **Visual Content Generation**
-- AI-generated images to accompany posts
+- Real AI-generated images using DALL-E 3
 - Professional visual design aligned with content
-- LinkedIn-optimized imagery
+- LinkedIn-optimized imagery (1024x1024, professional color schemes)
+- Automatic prompt enhancement for business-appropriate visuals
 
 ### 🛡️ **Content Guardrails**
 - Automatic link removal for LinkedIn compliance
@@ -85,7 +86,7 @@ Ensure you have the required dependencies installed:
 
 ```bash
 pip install google-adk
-pip install openai  # optional, for image generation
+pip install openai  # required for DALL-E image generation
 ```
 
 ## Usage

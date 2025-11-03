@@ -108,9 +108,6 @@ def generate_image(prompt: str, tool_context: ToolContext) -> Dict[str, Any]:
         Dict containing image generation results
     """
     try:
-        # Mock implementation for image generation
-        # In real implementation, you would use OpenAI's DALL-E API
-
         # Check if OpenAI API key is available
         openai_key = os.getenv("OPENAI_API_KEY")
         if not openai_key or openai_key == "your_openai_api_key_here":
@@ -120,21 +117,67 @@ def generate_image(prompt: str, tool_context: ToolContext) -> Dict[str, Any]:
                 "image_url": None
             }
 
-        # This would be the actual DALL-E integration
-        mock_image_url = f"https://example.com/generated-image-for-{hash(prompt)}.jpg"
+        # Import OpenAI client
+        try:
+            from openai import OpenAI
+        except ImportError:
+            return {
+                "status": "error",
+                "error": "OpenAI package not installed. Please run: pip install openai",
+                "image_url": None
+            }
+
+        # Initialize OpenAI client
+        client = OpenAI(api_key=openai_key)
+
+        # Enhanced prompt for LinkedIn-appropriate professional imagery
+        enhanced_prompt = f"""Create a professional, high-quality image suitable for LinkedIn business content about: {prompt}.
+        The image should be:
+        - Professional and business-appropriate
+        - Clean, modern design
+        - Suitable for social media sharing
+        - Visually appealing and engaging
+        - High contrast and readable
+        - LinkedIn-appropriate color scheme (blues, whites, professional tones)
+
+        Original concept: {prompt}"""
+
+        # Generate image using DALL-E 3
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=enhanced_prompt,
+            size="1024x1024",  # Square format works well for LinkedIn
+            quality="standard",  # Use "hd" for higher quality if needed
+            n=1,
+        )
+
+        # Extract the image URL
+        image_url = response.data[0].url
+
+        # Save image info to session state for later reference
+        image_info = {
+            "url": image_url,
+            "prompt": prompt,
+            "enhanced_prompt": enhanced_prompt,
+            "generated_at": json.dumps({"timestamp": "now"}),  # In real implementation, use datetime
+        }
+        tool_context.state["generated_image"] = image_info
 
         return {
             "status": "success",
             "prompt": prompt,
-            "image_url": mock_image_url,
-            "message": "Image generated successfully (mock implementation)"
+            "enhanced_prompt": enhanced_prompt,
+            "image_url": image_url,
+            "message": "Image generated successfully using DALL-E 3",
+            "usage_notes": "Image URL is valid for a limited time. Download and save if needed for long-term use."
         }
 
     except Exception as e:
         return {
             "status": "error",
-            "error": str(e),
-            "image_url": None
+            "error": f"Error generating image: {str(e)}",
+            "image_url": None,
+            "troubleshooting": "Check your OpenAI API key, account credits, and internet connection."
         }
 
 

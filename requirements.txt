@@ -1,0 +1,4 @@
+# Root-level requirements for simple agents (my_agent, linkedin_content_agent)
+google-adk>=1.17.0
+openai>=1.0.0  # Required for DALL-E image generation in linkedin_content_agent
+python-dotenv>=1.0.0  # For loading .env files
