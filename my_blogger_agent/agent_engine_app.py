@@ -27,15 +27,15 @@ from opentelemetry.sdk.trace import TracerProvider, export
 from vertexai._genai.types import AgentEngine, AgentEngineConfig
 from vertexai.agent_engines.templates.adk import AdkApp
 
-from blogger_agent.agent import root_agent
-from blogger_agent.utils.deployment import (
+from .agent import root_agent
+from .utils.deployment import (
     parse_env_vars,
     print_deployment_success,
     write_deployment_metadata,
 )
-from blogger_agent.utils.gcs import create_bucket_if_not_exists
-from blogger_agent.utils.tracing import CloudTraceLoggingSpanExporter
-from blogger_agent.utils.typing import Feedback
+from .utils.gcs import create_bucket_if_not_exists
+from .utils.tracing import CloudTraceLoggingSpanExporter
+from .utils.typing import Feedback
 
 
 class AgentEngineApp(AdkApp):
@@ -95,7 +95,7 @@ class AgentEngineApp(AdkApp):
 @click.option(
     "--extra-packages",
     multiple=True,
-    default=["./blogger_agent"],
+    default=["./"],
     help="Additional packages to include",
 )
 @click.option(

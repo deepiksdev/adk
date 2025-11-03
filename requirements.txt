@@ -1,4 +1,11 @@
-# Root-level requirements for simple agents (my_agent, linkedin_content_agent)
+# Root-level requirements for all agents
 google-adk>=1.17.0
 openai>=1.0.0  # Required for DALL-E image generation in linkedin_content_agent
 python-dotenv>=1.0.0  # For loading .env files
+pytest>=8.4.2  # For testing blogger agent
+pytest-asyncio>=1.2.0
+deprecated
+pandas
+tabulate
+tqdm
+scikit-learn
