@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菲乐兰成人配方奶粉 - 新西兰优质营养</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .poster {
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path fill="rgba(255,255,255,0.1)" d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"></path></svg>') no-repeat;
+            background-size: cover;
+            opacity: 0.3;
+        }
+
+        .brand-name {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: 3px;
+        }
+
+        .brand-name-en {
+            font-size: 24px;
+            font-weight: 300;
+            opacity: 0.9;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+        }
+
+        .tagline {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin-top: 20px;
+            display: inline-block;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .benefits {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .benefit-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid #2a5298;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .benefit-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .benefit-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .benefit-desc {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .features {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            margin-top: 30px;
+        }
+
+        .features-title {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #ffd700;
+            transition: transform 0.2s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .feature-number {
+            display: inline-block;
+            background: #ffd700;
+            color: #1e3c72;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 15px;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        .footer {
+            background: #1e3c72;
+            color: white;
+            padding: 25px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .cta-button {
+            background: #ffd700;
+            color: #1e3c72;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .benefits {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-name {
+                font-size: 36px;
+            }
+
+            .brand-name-en {
+                font-size: 18px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .poster {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <!-- Header Section -->
+        <div class="header">
+            <div class="brand-name">菲乐兰</div>
+            <div class="brand-name-en">Friland</div>
+            <div style="font-size: 22px; margin-top: 15px; font-weight: 500;">成人配方奶粉</div>
+            <div class="tagline">新西兰优质营养 · 健康守护专家</div>
+        </div>
+
+        <!-- Content Section -->
+        <div class="content">
+            <!-- Core Benefits -->
+            <div class="benefits">
+                <div class="benefit-card">
+                    <div class="benefit-icon">🇳🇿</div>
+                    <div class="benefit-title">新西兰好乳源</div>
+                    <div class="benefit-desc">源自纯净新西兰，黄金优质奶源，品质保证</div>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">🌿</div>
+                    <div class="benefit-title">促进肠道消化吸收</div>
+                    <div class="benefit-desc">添加益生元成分，呵护肠道健康，提升吸收效率</div>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">💪</div>
+                    <div class="benefit-title">预防三高</div>
+                    <div class="benefit-desc">科学配方，有助于维持血压、血糖、血脂健康水平</div>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">🦴</div>
+                    <div class="benefit-title">补钙壮骨</div>
+                    <div class="benefit-desc">富含钙质与维生素D，强健骨骼，延缓骨质疏松</div>
+                </div>
+            </div>
+
+            <!-- 5 Key Features -->
+            <div class="features">
+                <div class="features-title">✨ 5大特色成分 ✨</div>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-number">1</span>
+                        <div style="display: inline-block; vertical-align: top; width: calc(100% - 60px);">
+                            <div class="feature-title">新西兰奶源</div>
+                            <div class="feature-desc">黄金优质奶源，纯净天然，营养丰富</div>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-number">2</span>
+                        <div style="display: inline-block; vertical-align: top; width: calc(100% - 60px);">
+                            <div class="feature-title">脱盐乳清粉</div>
+                            <div class="feature-desc">奶粉中的灵魂，提升乳清蛋白含量且易吸收无负担</div>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-number">3</span>
+                        <div style="display: inline-block; vertical-align: top; width: calc(100% - 60px);">
+                            <div class="feature-title">菊粉、聚葡萄糖</div>
+                            <div class="feature-desc">调节肠道菌群，促进消化吸收，增强免疫力</div>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-number">4</span>
+                        <div style="display: inline-block; vertical-align: top; width: calc(100% - 60px);">
+                            <div class="feature-title">初乳碱性蛋白、维生素D、钙</div>
+                            <div class="feature-desc">促进钙吸收，延缓骨质疏松，补钙、壮骨三效合一</div>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-number">5</span>
+                        <div style="display: inline-block; vertical-align: top; width: calc(100% - 60px);">
+                            <div class="feature-title">富含维生素及矿物质</div>
+                            <div class="feature-desc">全面均衡营养，满足成人每日所需，提升整体健康水平</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Call to Action -->
+        <div class="footer">
+            <div style="font-size: 18px; margin-bottom: 10px;">选择菲乐兰，选择健康生活</div>
+            <a href="#" class="cta-button">立即购买</a>
+            <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+                优质营养 · 健康相伴 · 品质保证
+            </div>
+        </div>
+    </div>
+</body>
+</html>
