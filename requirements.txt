@@ -9,3 +9,7 @@ pandas
 tabulate
 tqdm
 scikit-learn
+# Customer service agent dependencies
+pydantic-settings>=2.8.1  # Required for customer service agent config
+cloudpickle>=3.1.1  # Required for customer service agent
+jsonschema>=4.23.0  # Required for customer service agent
