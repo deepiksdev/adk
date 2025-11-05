@@ -46,6 +46,8 @@ configs = Config()
 
 # configure logging __name__
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.info("[DEBUG] Customer service agent module loaded")
 
 
 root_agent = Agent(
@@ -70,5 +72,5 @@ root_agent = Agent(
     before_tool_callback=before_tool,
     after_tool_callback=after_tool,
     before_agent_callback=before_agent,
-    before_model_callback=rate_limit_callback,
+    # before_model_callback=rate_limit_callback,  # Disabled - causes blocking
 )

@@ -116,7 +116,7 @@ def validate_customer_id(customer_id: str, session_state: State) -> Tuple[bool, 
 def lowercase_value(value):
     """Make dictionary lowercase"""
     if isinstance(value, dict):
-        return (dict(k, lowercase_value(v)) for k, v in value.items())
+        return {k: lowercase_value(v) for k, v in value.items()}
     elif isinstance(value, str):
         return value.lower()
     elif isinstance(value, (list, set, tuple)):
@@ -130,9 +130,12 @@ def lowercase_value(value):
 def before_tool(
     tool: BaseTool, args: Dict[str, Any], tool_context: CallbackContext
 ):
+    logger.info(f"[DEBUG] before_tool called - Tool: {tool.name}, Args: {args}")
 
     # i make sure all values that the agent is sending to tools are lowercase
-    lowercase_value(args)
+    # Note: We need to reassign args since lowercase_value returns a new dict
+    args = lowercase_value(args)
+    logger.debug(f"[DEBUG] Args after lowercase: {args}")
 
     # Several tools require customer_id as input. We don't want to rely
     # solely on the model picking the right customer id. We validate it.
@@ -146,7 +149,9 @@ def before_tool(
     # Example logic based on the tool being called.
     if tool.name == "sync_ask_for_approval":
         amount = args.get("value", None)
+        logger.info(f"[DEBUG] sync_ask_for_approval - amount: {amount}")
         if amount <= 10:  # Example business rule
+            logger.info("[DEBUG] Auto-approving discount (amount <= 10)")
             return {
                 "status": "approved",
                 "message": "You can approve this discount; no manager needed."
@@ -154,38 +159,49 @@ def before_tool(
         # Add more logic checks here as needed for your tools.
 
     if tool.name == "modify_cart":
+        logger.info(f"[DEBUG] modify_cart called with args: {args}")
         if (
             args.get("items_added") is True
             and args.get("items_removed") is True
         ):
+            logger.info("[DEBUG] Returning cart modification result")
             return {"result": "I have added and removed the requested items."}
+
+    logger.info(f"[DEBUG] before_tool returning None for tool: {tool.name}")
     return None
 
 def after_tool(
     tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext, tool_response: Dict
 ) -> Optional[Dict]:
+    logger.info(f"[DEBUG] after_tool called - Tool: {tool.name}, Response: {tool_response}")
 
-  # After approvals, we perform operations deterministically in the callback
-  # to apply the discount in the cart.
-  if tool.name == "sync_ask_for_approval":
-    if tool_response['status'] == "approved":
-        logger.debug("Applying discount to the cart")
-        # Actually make changes to the cart
+    # After approvals, we perform operations deterministically in the callback
+    # to apply the discount in the cart.
+    if tool.name == "sync_ask_for_approval":
+        if tool_response['status'] == "approved":
+            logger.info("[DEBUG] Applying discount to the cart after sync_ask_for_approval")
+            # Actually make changes to the cart
 
-  if tool.name == "approve_discount":
-    if tool_response['status'] == "ok":
-        logger.debug("Applying discount to the cart")
-        # Actually make changes to the cart
+    if tool.name == "approve_discount":
+        if tool_response['status'] == "ok":
+            logger.info("[DEBUG] Applying discount to the cart after approve_discount")
+            # Actually make changes to the cart
 
-  return None
+    logger.info(f"[DEBUG] after_tool returning None for tool: {tool.name}")
+    return None
 
 # checking that the customer profile is loaded as state.
 def before_agent(callback_context: InvocationContext):
+    logger.info("[DEBUG] before_agent called")
+
     # In a production agent, this is set as part of the
-    # session creation for the agent. 
+    # session creation for the agent.
     if "customer_profile" not in callback_context.state:
+        logger.info("[DEBUG] Creating customer profile for customer 123")
         callback_context.state["customer_profile"] = Customer.get_customer(
             "123"
         ).to_json()
+    else:
+        logger.info("[DEBUG] Customer profile already exists in state")
 
-    # logger.info(callback_context.state["customer_profile"])
+    logger.info(f"[DEBUG] Customer profile: {callback_context.state['customer_profile']}")

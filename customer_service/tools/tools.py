@@ -36,10 +36,11 @@ def send_call_companion_link(phone_number: str) -> str:
         >>> send_call_companion_link(phone_number='+12065550123')
         {'status': 'success', 'message': 'Link sent to +12065550123'}
     """
+    logger.info("[DEBUG] send_call_companion_link called with phone: %s", phone_number)
 
-    logger.info("Sending call companion link to %s", phone_number)
-
-    return {"status": "success", "message": f"Link sent to {phone_number}"}
+    result = {"status": "success", "message": f"Link sent to {phone_number}"}
+    logger.info("[DEBUG] send_call_companion_link returning: %s", result)
+    return result
 
 
 def approve_discount(discount_type: str, value: float, reason: str) -> str:
