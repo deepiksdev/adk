@@ -167,3 +167,7 @@ root_agent = capital_agent_with_tool
 # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.
 if __name__ == "__main__":
     asyncio.run(main())
+
+from google.adk.apps.app import App
+
+app = App(root_agent=root_agent, name="app")
