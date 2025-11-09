@@ -65,7 +65,7 @@ OPENAI_API_KEY=your_actual_openai_api_key
 
 # Optional: Google Cloud settings (if using Vertex AI)
 # GOOGLE_CLOUD_PROJECT=your_gcp_project_id
-# GOOGLE_CLOUD_LOCATION=europe-west1
+# GOOGLE_CLOUD_LOCATION=us-central1
 ```
 
 ### 2. Get Your API Keys
