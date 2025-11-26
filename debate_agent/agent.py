@@ -2,6 +2,7 @@ from google.adk.agents.llm_agent import Agent
 from google.adk.tools.base_tool import BaseTool
 import requests
 import json
+import os
 
 #DEBATO
 
@@ -12,7 +13,7 @@ class DeepGenTool(BaseTool):
     description = "Calls DeepGen API to get chat completions using GPT-4o model."
     
     def __init__(self):
-        self.api_key = "SM9OR4sZH0eDXvg4y5OT1yuLEwQ2_QRKw004NTDB7dbCztkPSalSsr5ZEdw15bA7gxJmoDsTls6KB"
+        self.api_key = os.getenv("DEEPGEN_API_KEY")
         self.base_url = "https://api.deepgen.app/v1/chat/completions"
     
     def chat(self, message: str) -> str: 
