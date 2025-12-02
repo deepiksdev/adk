@@ -3,6 +3,8 @@ from google.adk.tools.base_tool import BaseTool
 import requests
 import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 #DEBATO
 
