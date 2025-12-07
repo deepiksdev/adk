@@ -24,8 +24,7 @@ def create_call(req: Request):
     host = req.url.hostname
     scheme = req.url.scheme
     ws_protocol = "ws" if scheme == "http" else "wss"
-    agent_name = req.query_params.get("agent_name", "twilio_voice_agent")
-    ws_url = f"{ws_protocol}://{host}/twilio/stream?agent_name={agent_name}"
+    ws_url = f"{ws_protocol}://{host}/twilio/stream"
 
     stream = Stream(url=ws_url)
     connect = Connect()
@@ -37,7 +36,7 @@ def create_call(req: Request):
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 @api.websocket("/twilio/stream")
-async def twilio_websocket(ws: WebSocket, agent_name: str = "twilio_voice_agent"):
+async def twilio_websocket(ws: WebSocket):
     """Handle Twilio Media Stream WebSocket connection"""
     await ws.accept()
     await ws.receive_json() # throw away `connected` event
@@ -49,7 +48,7 @@ async def twilio_websocket(ws: WebSocket, agent_name: str = "twilio_voice_agent"
     stream_sid = start_event["start"]["streamSid"]
     user_id = uuid4().hex # Fake user ID for this example
     
-    live_events, live_request_queue = await start_agent_session(user_id, call_sid, agent_name)
+    live_events, live_request_queue = await start_agent_session(user_id, call_sid)
     
     # Sending an initial message makes the agent speak first when the call starts.
     initial_message = text_to_content("Présente toi en français.", "user")

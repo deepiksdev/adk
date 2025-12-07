@@ -7,7 +7,7 @@ from google.adk.agents.live_request_queue import LiveRequestQueue
 from google.genai import types
 from google.genai.types import Part, Blob, Content
 from pydantic import BaseModel, Field
-from google.adk.cli.utils.agent_loader import AgentLoader
+from .agent import root_agent
 
 def text_to_content(text: str, role: Literal["user", "model"] = "user") -> Content:
     """Helper to create a Content object from text"""
@@ -17,17 +17,13 @@ APP_NAME = "THE VOICE AGENT"
 LiveEvents = AsyncGenerator[Event, None]
 
 async def start_agent_session(
-    user_id: str, session_id: str, agent_name: str
+    user_id: str, session_id: str
 ) -> tuple[LiveEvents, LiveRequestQueue]:
     """Starts an agent session"""
-    
-    loader = AgentLoader(agents_dir=".")
-    agent = loader.load_agent(agent_name)
-    
     # Create a Runner
     runner = InMemoryRunner(
-        agent,
-        app_name=agent_name,
+        root_agent,
+        app_name=APP_NAME,
     )
     
     # Create a Session
