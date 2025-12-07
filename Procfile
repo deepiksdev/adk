@@ -1,1 +1,1 @@
-web: python deployment_app.py
+web: adk web . --host 0.0.0.0 --port $PORT --no-reload
