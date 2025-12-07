@@ -51,7 +51,7 @@ async def twilio_websocket(ws: WebSocket):
     live_events, live_request_queue = await start_agent_session(user_id, call_sid)
     
     # Sending an initial message makes the agent speak first when the call starts.
-    initial_message = text_to_content("Introduce yourself.", "user")
+    initial_message = text_to_content("Présente toi en français.", "user")
     live_request_queue.send_content(initial_message)
 
     async def handle_agent_event(event: AgentEvent):
