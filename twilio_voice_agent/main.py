@@ -10,6 +10,10 @@ from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
 from .live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content
 from .audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 logger = logging.getLogger('uvicorn.error')
 
 api = FastAPI()
@@ -31,7 +35,7 @@ def create_call(req: Request):
     logger.info(response)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
-@api.websocket("/stream")
+@api.websocket("/twilio/stream")
 async def twilio_websocket(ws: WebSocket):
     """Handle Twilio Media Stream WebSocket connection"""
     await ws.accept()

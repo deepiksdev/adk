@@ -103,7 +103,7 @@ async def agent_to_client_messaging(
     async for event in live_events:
         message: AgentEvent
         
-        if event.turn_completion:
+        if event.turn_complete:
             message = AgentTurnCompleteEvent(timestamp=event.timestamp)
             await on_agent_event(message)
             continue
