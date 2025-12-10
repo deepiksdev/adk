@@ -40,7 +40,8 @@ def create_call(req: Request):
     """Generate TwiML to connect a call to a Twilio Media Stream"""
     host = req.url.hostname
     scheme = req.url.scheme
-    ws_protocol = "ws" if scheme == "http" else "wss"
+    #ws_protocol = "ws" if scheme == "http" else "wss"
+    ws_protocol= "wss"
     ws_url = f"{ws_protocol}://{host}/twilio/stream"
 
     stream = Stream(url=ws_url)
