@@ -39,7 +39,7 @@ async def start_agent_session(
             prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Zephyr")
         ),
         # https://ai.google.dev/gemini-api/docs/speech-generation#languages
-        language_code="en-US",
+        language_code="fr-FR",
     )
 
     automatic_activity_detection = types.AutomaticActivityDetection(
