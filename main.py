@@ -1,9 +1,25 @@
 import logging
 import os
+import asyncio
+import base64
+from uuid import uuid4
+
+from fastapi import Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from google.adk.cli.fast_api import get_fast_api_app
+
+# Twilio imports
+from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
+from twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content
+from twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('uvicorn.error')
 
 # Initialize the standard ADK FastAPI app
 # agents_dir="." allows it to find agents in the current directory
@@ -11,10 +27,136 @@ app = get_fast_api_app(
     agents_dir=".",
     web=True,  # Enable the Web UI
     host="0.0.0.0",
-    port=int(os.environ.get("PORT", 8080))
+    port=int(os.environ.get("PORT", 8000))
 )
 
 @app.get("/hello")
 def hello():
     """Simple Hello World endpoint for testing custom routes."""
     return {"message": "Hello World"}
+
+@app.post("/connect")
+def create_call(req: Request):
+    """Generate TwiML to connect a call to a Twilio Media Stream"""
+    host = req.url.hostname
+    scheme = req.url.scheme
+    ws_protocol = "ws" if scheme == "http" else "wss"
+    ws_url = f"{ws_protocol}://{host}/twilio/stream"
+
+    stream = Stream(url=ws_url)
+    connect = Connect()
+    connect.append(stream)
+    response = VoiceResponse()
+    response.append(connect)
+    
+    logger.info(response)
+    return HTMLResponse(content=str(response), media_type="application/xml")
+
+@app.websocket("/twilio/stream")
+async def twilio_websocket(ws: WebSocket):
+    """Handle Twilio Media Stream WebSocket connection"""
+    await ws.accept()
+    await ws.receive_json() # throw away `connected` event
+    
+    start_event = await ws.receive_json()
+    assert start_event["event"] == "start"
+    
+    call_sid = start_event["start"]["callSid"]
+    stream_sid = start_event["start"]["streamSid"]
+    user_id = uuid4().hex # Fake user ID for this example
+    
+    live_events, live_request_queue = await start_agent_session(user_id, call_sid)
+    
+    # Sending an initial message makes the agent speak first when the call starts.
+    initial_message = text_to_content("Introduce yourself.", "user")
+    live_request_queue.send_content(initial_message)
+
+    async def handle_agent_event(event: AgentEvent):
+        """Handle outgoing AgentEvent to Twilio WebSocket"""
+        if event.type == "complete":
+            # logger.info(f"Agent turn complete at {event.timestamp}")
+            return
+            
+        if event.type == "interrupted":
+            # logger.info(f"Agent interrupted at {event.timestamp}")
+            # https://www.twilio.com/docs/voice/media-streams/websocket-messages#clear
+            return await ws.send_json({"event": "clear", "streamSid": stream_sid})
+            
+        ulaw_bytes = adk_pcm24k_to_twilio_ulaw8k(event.payload)
+        payload = base64.b64encode(ulaw_bytes).decode("ascii")
+        
+        await ws.send_json(
+            {
+                "event": "media",
+                "streamSid": stream_sid,
+                "media": {"payload": payload},
+            }
+        )
+
+    async def websocket_loop():
+        """
+        Handle incoming WebSocket messages to Agent.
+        """
+        while True:
+            event = await ws.receive_json()
+            event_type = event["event"]
+            
+            if event_type == "stop":
+                logger.debug(f"Call ended by Twilio. Stream SID: {stream_sid}")
+                break
+                
+            if event_type == "start" or event_type == "connected":
+                logger.warning(f"Unexpected Twilio Initialization event: {event}")
+                continue
+                
+            elif event_type == "dtmf":
+                digit = event["dtmf"]["digit"]
+                logger.info(f"DTMF: {digit}")
+                continue
+                
+            elif event_type == "mark":
+                logger.info(f"Twilio sent a Mark Event: {event}")
+                continue
+                
+            elif event_type == "media":
+                payload = event["media"]["payload"]
+                mulaw_bytes = base64.b64decode(payload)
+                pcm_bytes = twilio_ulaw8k_to_adk_pcm16k(mulaw_bytes)
+                send_pcm_to_agent(pcm_bytes, live_request_queue)
+
+    try:
+        websocket_coro = websocket_loop()
+        websocket_task = asyncio.create_task(websocket_coro)
+        
+        messaging_coro = agent_to_client_messaging(handle_agent_event, live_events)
+        messaging_task = asyncio.create_task(messaging_coro)
+        
+        tasks = [websocket_task, messaging_task]
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        
+        for p in pending:
+            p.cancel()
+            
+        await asyncio.gather(*pending, return_exceptions=True)
+        
+        for d in done:
+            if d.cancelled():
+                continue
+            exception = d.exception()
+            if exception:
+                raise exception
+                
+    except (KeyboardInterrupt, asyncio.CancelledError, WebSocketDisconnect):
+        logger.warning("Process interrupted, exiting...")
+    except Exception as ex:
+        logger.exception(f"Unexpected Error: {ex}")
+    finally:
+        live_request_queue.close()
+        try:
+            await ws.close()
+        except Exception as ex:
+            logger.warning(f"Error while closing WebSocket: {ex}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

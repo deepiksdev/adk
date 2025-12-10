@@ -58,3 +58,11 @@ Each agent is contained in its own directory with:
 - Additional files as needed (tools, sub-agents, etc.)
 
 For detailed development information, see `CLAUDE.md`.
+
+## Local Development
+
+To run the custom server (including Twilio integration) with auto-reload enabled:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
