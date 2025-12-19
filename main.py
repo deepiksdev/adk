@@ -14,13 +14,6 @@ from twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messag
 from twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
 from dotenv import load_dotenv
-
-load_dotenv()
-
-# Setup basic logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('uvicorn.error')
-
 # Initialize the standard ADK FastAPI app
 # agents_dir="." allows it to find agents in the current directory
 app = get_fast_api_app(
@@ -28,7 +21,7 @@ app = get_fast_api_app(
     web=True,  # Enable the Web UI
     host="0.0.0.0",
     port=int(os.environ.get("PORT", 8000)),
-    extra_plugins=["plugins.LoggingPlugin"]
+    extra_plugins=["plugins.logging_plugin.LoggingPlugin"]
 )
 
 @app.get("/hello")

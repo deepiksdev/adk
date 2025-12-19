@@ -50,6 +50,7 @@ class LoggingPlugin(BasePlugin):
     Args:
       name: The name of the plugin instance.
     """
+    print("Logging plugin initialized")
     super().__init__(name)
 
   async def on_user_message_callback(
