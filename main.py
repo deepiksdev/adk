@@ -27,7 +27,8 @@ app = get_fast_api_app(
     agents_dir=".",
     web=True,  # Enable the Web UI
     host="0.0.0.0",
-    port=int(os.environ.get("PORT", 8000))
+    port=int(os.environ.get("PORT", 8000)),
+    extra_plugins=["plugins.LoggingPlugin"]
 )
 
 @app.get("/hello")
