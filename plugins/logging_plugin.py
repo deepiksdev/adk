@@ -111,7 +111,8 @@ class LoggingPlugin(BasePlugin):
       self._log(
           "   Token Usage - Input:"
           f" {event.usage_metadata.prompt_token_count}, Output:"
-          f" {event.usage_metadata.candidates_token_count}"
+          f" {event.usage_metadata.candidates_token_count}, Total:"
+          f" {event.usage_metadata.total_token_count}"
       )
 
     return None

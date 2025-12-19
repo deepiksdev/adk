@@ -40,3 +40,4 @@ async def test_on_event_callback_logs_usage_metadata(capsys):
     assert "Token Usage" in output
     assert "Input: 100" in output
     assert "Output: 50" in output
+    assert "Total: 150" in output
