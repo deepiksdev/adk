@@ -107,6 +107,13 @@ class LoggingPlugin(BasePlugin):
     if event.long_running_tool_ids:
       self._log(f"   Long Running Tools: {list(event.long_running_tool_ids)}")
 
+    if event.usage_metadata:
+      self._log(
+          "   Token Usage - Input:"
+          f" {event.usage_metadata.prompt_token_count}, Output:"
+          f" {event.usage_metadata.candidates_token_count}"
+      )
+
     return None
 
   async def after_run_callback(
