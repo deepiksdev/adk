@@ -14,6 +14,8 @@ from twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messag
 from twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 # Initialize the standard ADK FastAPI app
 # agents_dir="." allows it to find agents in the current directory
 app = get_fast_api_app(
