@@ -13,7 +13,7 @@ def text_to_content(text: str, role: Literal["user", "model"] = "user") -> Conte
     """Helper to create a Content object from text"""
     return Content(role=role, parts=[Part(text=text)])
 
-from plugins import LoggingPlugin
+
 
 APP_NAME = "THE VOICE AGENT"
 LiveEvents = AsyncGenerator[Event, None]
@@ -26,7 +26,7 @@ async def start_agent_session(
     runner = InMemoryRunner(
         root_agent,
         app_name=APP_NAME,
-        plugins=[LoggingPlugin()]
+        plugins=[]
     )
     
     # Create a Session
