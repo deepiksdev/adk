@@ -14,14 +14,14 @@ logging.basicConfig(
 )
 
 # Enable debug logging for customer service modules
-logging.getLogger("customer_service").setLevel(logging.DEBUG)
+logging.getLogger("agents.customer_service").setLevel(logging.DEBUG)
 logging.getLogger("google.adk").setLevel(logging.INFO)
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    from customer_service.agent import root_agent
+    from agents.customer_service.agent import root_agent
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
     from google.genai import types as genai_types

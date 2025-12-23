@@ -9,8 +9,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    from customer_service.agent import root_agent
-    from customer_service.config import Config
+    from agents.customer_service.agent import root_agent
+    from agents.customer_service.config import Config
 
     print("✅ Customer Service Agent imported successfully!")
     print(f"Agent name: {root_agent.name}")

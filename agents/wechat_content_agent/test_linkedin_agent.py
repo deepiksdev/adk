@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-from linkedin_content_agent.agent import root_agent
+from agents.linkedin_content_agent.agent import root_agent
 from google.genai import types as genai_types
 
 # Load environment variables from .env file

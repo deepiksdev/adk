@@ -10,8 +10,8 @@ from google.adk.cli.fast_api import get_fast_api_app
 
 # Twilio imports
 from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
-from twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content
-from twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
+from agents.twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content
+from agents.twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
 from dotenv import load_dotenv
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Initialize the standard ADK FastAPI app
 # agents_dir="." allows it to find agents in the current directory
 app = get_fast_api_app(
-    agents_dir=".",
+    agents_dir="agents",
     web=True,  # Enable the Web UI
     host="0.0.0.0",
     port=int(os.environ.get("PORT", 8000)),

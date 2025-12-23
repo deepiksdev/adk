@@ -25,7 +25,7 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.sessions.state import State
 from google.adk.tools.tool_context import ToolContext
 from jsonschema import ValidationError
-from customer_service.entities.customer import Customer
+from agents.customer_service.entities.customer import Customer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
