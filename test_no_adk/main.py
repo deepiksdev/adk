@@ -74,6 +74,15 @@ async def twilio_websocket(ws: WebSocket):
             voice_config=types.VoiceConfig(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
             )
+        ),
+        realtime_input_config=types.RealtimeInputConfig(
+            automatic_activity_detection=types.AutomaticActivityDetection(
+                disabled=False,
+                start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
+                end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
+                prefix_padding_ms=150,
+                silence_duration_ms=400,
+            )
         )
     )
 
@@ -119,6 +128,7 @@ async def twilio_websocket(ws: WebSocket):
                             
                             # Send to Gemini
                             # Protocol: mime_type="audio/pcm;rate=16000"
+                            # logger.info(f"Sending audio chunk to Gemini: {len(pcm_bytes)} bytes")
                             await session.send(input={"data": pcm_bytes, "mime_type": "audio/pcm;rate=16000"}, end_of_turn=False)
                             
                         elif event_type == "stop":
@@ -142,6 +152,9 @@ async def twilio_websocket(ws: WebSocket):
                         model_turn = server_content.model_turn
                         if model_turn:
                             for part in model_turn.parts:
+                                if part.text:
+                                    logger.info(f"Gemini Text: {part.text}")
+                                    
                                 if part.inline_data:
                                     mime_type = part.inline_data.mime_type
                                     if mime_type.startswith("audio/pcm"):
