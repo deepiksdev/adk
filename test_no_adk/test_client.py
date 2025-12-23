@@ -42,21 +42,6 @@ async def test_client():
             }))
             print("Sent 'start' event.")
 
-            # Send some audio immediately to trigger the server-side processing
-            # 1 sec of silence (8000 samples)
-            silence = b'\xff' * 160 
-            payload = base64.b64encode(silence).decode("ascii")
-            await websocket.send(json.dumps({
-                "event": "media",
-                "streamSid": stream_sid,
-                "media": {
-                    "payload": payload,
-                    "track": "inbound",
-                    "chunk": "1",
-                    "timestamp": "1"
-                }
-            }))
-
             # 3. Listen for media
             # We expect the agent to say hello immediately.
             
