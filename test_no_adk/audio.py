@@ -15,19 +15,6 @@ def _lin2ulaw(pcm_bytes: bytes) -> bytes:
     """Convert 16-bit linear PCM to u-law bytes."""
     samples = np.frombuffer(pcm_bytes, dtype=np.int16)
     
-    # Clamp to 13 bits (standard for u-law input is effectively 14 bits signed but often treated as 13)
-    # Actually G.711 takes 14 bit signed linear.
-    
-    # 1. Get sign and magnitude
-    # sign = (samples < 0)
-    # mag = np.abs(samples)
-    
-    # 2. Clip to 32635 ? Standard G.711 clipping
-    # mag = np.clip(mag, 0, 32635)
-    
-    # 3. Add bias 0x84 (132)
-    # mag += 132
-    
     indices = samples.view(np.uint16)
     return _LIN_TO_ULAW_TABLE[indices].tobytes()
 
@@ -68,11 +55,8 @@ def _generate_lin_to_ulaw_table():
             
         sample += BIAS
         exponent = 0
-        # Determine exponent (approx log2)
-        # 7 6 5 4 3 2 1 0
-        if sample >= (1 << 15): warnings = True # Shouldn't happen max 32635+132=32767
-        # exp ranges 0-7
-        # simple check
+        
+        if sample >= (1 << 15): warnings = True 
         if sample >= 0x4000: exponent = 7 # 16384
         elif sample >= 0x2000: exponent = 6 # 8192
         elif sample >= 0x1000: exponent = 5 # 4096
@@ -87,10 +71,6 @@ def _generate_lin_to_ulaw_table():
         return ulaw_byte
 
     # Fill table
-    # Indices 0 to 32767 correspond to positive 0..32767
-    # Indices 32768 to 65535 correspond to negative -32768..-1 (in two's complement view)
-    
-    # However we can just iterate -32768 to 32767 and cast to uint16 to find index
     for s in range(-32768, 32768):
         val = encode_sample(s)
         # Cast s to uint16 index
@@ -124,6 +104,17 @@ def adk_pcm24k_to_twilio_ulaw8k(pcm24: bytes) -> bytes:
     y = soxr.resample(x, 24000, 8000) # 24kHz -> 8kHz
     pcm8_samples = (np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes()
     
-    # ulaw = audioop.lin2ulaw(pcm8, 2)
+    ulaw = _lin2ulaw(pcm8_samples)
+    return ulaw
+
+# Outbound: ADK 16-bit 16kHz PCM -> Twilio 8-bit 8kHz μ-law
+# Useful for echo tests or if Gemini sends 16k
+def adk_pcm16k_to_twilio_ulaw8k(pcm16: bytes) -> bytes:
+    if not pcm16:
+        return b""
+    x = np.frombuffer(pcm16, dtype=np.int16).astype(np.float32) / 32768.0
+    y = soxr.resample(x, 16000, 8000) # 16kHz -> 8kHz
+    pcm8_samples = (np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes()
+    
     ulaw = _lin2ulaw(pcm8_samples)
     return ulaw

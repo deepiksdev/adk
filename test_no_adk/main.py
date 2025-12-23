@@ -35,15 +35,7 @@ async def create_call(req: Request):
     host = req.url.hostname
     port = req.url.port
     
-    # In local development, req.url.hostname might be 'localhost', 
-    # but Twilio needs a public URL. Assumes this runs behind ngrok or similar 
-    # if hit from outside, OR just return the TwiML to the caller.
-    
-    # If run locally with ngrok, the Host header usually contains the public domain
-    # But for simplicity, we construct it from the request url.
     ws_host = f"{host}:{port}" if port else host
-    
-    # Handle protocol: wss for https, ws for http
     ws_protocol = "wss" if req.url.scheme == "https" else "ws"
     ws_url = f"{ws_protocol}://{ws_host}/twilio/stream"
 
@@ -61,10 +53,6 @@ async def twilio_websocket(ws: WebSocket):
     await ws.accept()
     logger.info("Twilio WebSocket connected")
 
-    # Audio queues
-    # Twilio -> Agent (Gemini)
-    # Agent (Gemini) -> Twilio
-    
     client = Client(api_key=API_KEY)
     
     # Configuration for Gemini B2B session
@@ -83,14 +71,11 @@ async def twilio_websocket(ws: WebSocket):
                 prefix_padding_ms=150,
                 silence_duration_ms=400,
             )
-        )
+        ),
+        input_audio_transcription=types.AudioTranscriptionConfig()
     )
 
     try:
-        # 1. Receive 'start' event from Twilio
-        # Twilio sends a 'connected' event first, then 'start'.
-        # We process messages until we get 'start'.
-        
         stream_sid = None
         
         # Start Gemini session
@@ -115,7 +100,6 @@ async def twilio_websocket(ws: WebSocket):
                             logger.info(f"Stream started: {stream_sid}")
                             
                             # Initial greeting
-                            # We can send text to Gemini to trigger an audio response
                             await session.send(input="Hello! Please introduce yourself briefly.", end_of_turn=True)
 
                         elif event_type == "media":
@@ -123,12 +107,11 @@ async def twilio_websocket(ws: WebSocket):
                             payload = message["media"]["payload"]
                             # decode base64 -> mulaw
                             mulaw_bytes = base64.b64decode(payload)
+                            
                             # mulaw 8k -> pcm 16k
                             pcm_bytes = twilio_ulaw8k_to_adk_pcm16k(mulaw_bytes)
                             
                             # Send to Gemini
-                            # Protocol: mime_type="audio/pcm;rate=16000"
-                            # logger.info(f"Sending audio chunk to Gemini: {len(pcm_bytes)} bytes")
                             await session.send(input={"data": pcm_bytes, "mime_type": "audio/pcm;rate=16000"}, end_of_turn=False)
                             
                         elif event_type == "stop":
@@ -143,17 +126,22 @@ async def twilio_websocket(ws: WebSocket):
                 nonlocal stream_sid
                 try:
                     async for response in session.receive():
-                        # We look for audio data in the server content
                         server_content = response.server_content
                         if server_content is None:
                             continue
 
-                        # Audio is usually in model_turn.parts
+                        # Log transcription if available
                         model_turn = server_content.model_turn
+                        
+                        # Handle turn completions or interruptions if needed
+                        # In SDK, turn_complete is boolean
+                        if server_content.turn_complete:
+                             logger.info("Turn complete")
+
                         if model_turn:
                             for part in model_turn.parts:
                                 if part.text:
-                                    logger.info(f"Gemini Text: {part.text}")
+                                    logger.info(f"Gemini Text/Transcript: {part.text}")
                                     
                                 if part.inline_data:
                                     mime_type = part.inline_data.mime_type
@@ -173,9 +161,6 @@ async def twilio_websocket(ws: WebSocket):
                                                     "payload": payload
                                                 }
                                             })
-                                            
-                        # Handle turn completions or interruptions if needed
-                        # "turn_complete" is currently inferred or handled by client logic
                         
                 except Exception as e:
                     logger.error(f"Error in gemini_receiver: {e}")
