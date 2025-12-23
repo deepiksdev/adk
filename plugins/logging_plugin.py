@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 from typing import Optional
 from typing import TYPE_CHECKING
-
 from google.genai import types
 
 from google.adk.agents.base_agent import BaseAgent
@@ -52,6 +52,7 @@ class LoggingPlugin(BasePlugin):
     """
     print("Logging plugin initialized")
     super().__init__(name)
+    self._metrics = {}
 
   async def on_user_message_callback(
       self,
@@ -108,12 +109,42 @@ class LoggingPlugin(BasePlugin):
       self._log(f"   Long Running Tools: {list(event.long_running_tool_ids)}")
 
     if event.usage_metadata:
+      # Note: candidates_token_count (output tokens) is not currently supported by
+      # the Gemini Live API and will be None.
+      # See: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live
       self._log(
           "   Token Usage - Input:"
           f" {event.usage_metadata.prompt_token_count}, Output:"
-          f" {event.usage_metadata.candidates_token_count}, Total:"
-          f" {event.usage_metadata.total_token_count}"
+          f" {event.usage_metadata.candidates_token_count},"
+          f" Total: {event.usage_metadata.total_token_count}"
       )
+
+    # Voice Duration Tracking
+    metrics = self._metrics.setdefault(invocation_context.invocation_id, {})
+    current_time = time.time()
+
+    # Input Duration (User Audio)
+    if event.input_transcription:
+      if "input_start" not in metrics:
+        metrics["input_start"] = current_time
+
+      if event.input_transcription.finished:
+        start_time = metrics.pop("input_start", None)
+        if start_time:
+          duration = current_time - start_time
+          self._log(f"   User Input Duration: {duration:.2f}s")
+
+    # Output Duration (Model Audio)
+    # Mark start on first output transcription or content
+    if (event.output_transcription or event.content) and "output_start" not in metrics:
+      metrics["output_start"] = current_time
+
+    # Mark end on turn_complete
+    if event.turn_complete:
+      start_time = metrics.pop("output_start", None)
+      if start_time:
+        duration = current_time - start_time
+        self._log(f"   Model Output Duration: {duration:.2f}s")
 
     return None
 
