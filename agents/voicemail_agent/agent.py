@@ -18,7 +18,7 @@ Sois toujours poli et professionnel."""
 
 root_agent = Agent(
     name="voicemail_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description=f"Agent répondeur téléphonique pour {user_name}.",
     instruction=instruction,
     tools=[send_voicemail_email]
