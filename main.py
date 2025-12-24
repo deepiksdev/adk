@@ -21,6 +21,8 @@ except ImportError:
 
 from dotenv import load_dotenv
 
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 # Initialize the standard ADK FastAPI app
 # agents_dir="." allows it to find agents in the current directory
