@@ -80,7 +80,10 @@ async def twilio_websocket(ws: WebSocket):
         # For voicemail, we let the instruction handle the first greeting naturally or we can force it.
         # The issue specifies: It should start by replying in French...
         # So we send an initial trigger.
-        initial_message = text_to_content("Démarre l'accueil répondeur.", "user")
+        initial_message = text_to_content(
+            f"La conversation commence. Dis EXACTEMENT la phrase suivante pour accueillir le correspondant : 'Bonjour, je suis une IA répondeur téléphonique. {os.environ.get('VOICEMAIL_USER_NAME', 'User')} n'est pas disponible. Voulez-vous que je prenne un message à son intention, ou avez-vous des questions ?'", 
+            "user"
+        )
     else:
         live_events, live_request_queue = await start_agent_session(user_id, call_sid)
         # Sending an initial message makes the agent speak first when the call starts.
