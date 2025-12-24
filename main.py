@@ -13,6 +13,12 @@ from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
 from agents.twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content
 from agents.twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
+# Import voicemail agent if needed
+try:
+    from agents.voicemail_agent.agent import root_agent as voicemail_root_agent
+except ImportError:
+    voicemail_root_agent = None
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -62,10 +68,22 @@ async def twilio_websocket(ws: WebSocket):
     stream_sid = start_event["start"]["streamSid"]
     user_id = uuid4().hex # Fake user ID for this example
     
-    live_events, live_request_queue = await start_agent_session(user_id, call_sid)
     
-    # Sending an initial message makes the agent speak first when the call starts.
-    initial_message = text_to_content("Présente-toi en Français.", "user")
+    # Check if we should use the voicemail agent
+    is_voicemail_mode = os.environ.get("USE_VOICEMAIL_AGENT", "false").lower() == "true"
+    
+    if is_voicemail_mode and voicemail_root_agent:
+        # Start a session with the voicemail agent
+        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, voicemail_root_agent)
+        # For voicemail, we let the instruction handle the first greeting naturally or we can force it.
+        # The issue specifies: It should start by replying in French...
+        # So we send an initial trigger.
+        initial_message = text_to_content("Démarre l'accueil répondeur.", "user")
+    else:
+        live_events, live_request_queue = await start_agent_session(user_id, call_sid)
+        # Sending an initial message makes the agent speak first when the call starts.
+        initial_message = text_to_content("Présente-toi en Français.", "user")
+    
     live_request_queue.send_content(initial_message)
 
     async def handle_agent_event(event: AgentEvent):

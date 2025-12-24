@@ -7,7 +7,7 @@ pytest-asyncio>=1.2.0
 deprecated
 pandas
 tabulate
-tqdm
+todd
 scikit-learn
 # Customer service agent dependencies
 pydantic-settings>=2.8.1  # Required for customer service agent config
@@ -17,3 +17,4 @@ twilio
 numpy
 soxr
 uvicorn
+boto3

@@ -18,13 +18,13 @@ def text_to_content(text: str, role: Literal["user", "model"] = "user") -> Conte
 APP_NAME = "THE VOICE AGENT"
 LiveEvents = AsyncGenerator[Event, None]
 
-async def start_agent_session(
-    user_id: str, session_id: str
+async def start_agent_session_with_agent(
+    user_id: str, session_id: str, agent
 ) -> tuple[LiveEvents, LiveRequestQueue]:
-    """Starts an agent session"""
+    """Starts an agent session with a specific agent"""
     # Create a Runner
     runner = InMemoryRunner(
-        root_agent,
+        agent,
         app_name=APP_NAME,
         plugins=[]
     )
@@ -75,6 +75,11 @@ async def start_agent_session(
     )
     
     return live_events, live_request_queue
+
+async def start_agent_session(
+    user_id: str, session_id: str
+) -> tuple[LiveEvents, LiveRequestQueue]:
+    return await start_agent_session_with_agent(user_id, session_id, root_agent)
 
 class AgentInterruptedEvent(BaseModel):
     type: Literal["interrupted"] = "interrupted"
