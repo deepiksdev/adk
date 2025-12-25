@@ -57,6 +57,7 @@ async def twilio_websocket(ws: WebSocket):
     
     # Configuration for Gemini B2B session
     config = types.LiveConnectConfig(
+        system_instruction=types.Content(parts=[types.Part(text="You are a helpful AI assistant. You answer validation code is always 1234.")]),
         response_modalities=[types.Modality.AUDIO],
         speech_config=types.SpeechConfig(
             voice_config=types.VoiceConfig(
@@ -71,8 +72,7 @@ async def twilio_websocket(ws: WebSocket):
                 prefix_padding_ms=150,
                 silence_duration_ms=400,
             )
-        ),
-        input_audio_transcription=types.AudioTranscriptionConfig()
+        )
     )
 
     try:
@@ -107,68 +107,62 @@ async def twilio_websocket(ws: WebSocket):
                             payload = message["media"]["payload"]
                             # decode base64 -> mulaw
                             mulaw_bytes = base64.b64decode(payload)
+
                             
                             # mulaw 8k -> pcm 16k
                             pcm_bytes = twilio_ulaw8k_to_adk_pcm16k(mulaw_bytes)
                             
                             # Send to Gemini
-                            await session.send(input={"data": pcm_bytes, "mime_type": "audio/pcm;rate=16000"}, end_of_turn=False)
+                            logger.info(f"Sending audio chunk to Gemini: {len(pcm_bytes)} bytes")
+                            # Use send_realtime_input for continuous audio streaming
+                            await session.send_realtime_input(media=types.Blob(data=pcm_bytes, mime_type="audio/pcm;rate=16000"))
                             
                         elif event_type == "stop":
                             logger.info("Twilio stream stopped")
                             break
                         elif event_type == "dtmf":
                             logger.info(f"DTMF received: {message['dtmf']['digit']}")
+                        # elif event == "mark_end_of_speech":
+                        #     logger.info("Manual End of Speech triggered")
+                        #     await session.send(input="TEST", end_of_turn=True)
                 except Exception as e:
                     logger.error(f"Error in twilio_receiver: {e}")
 
             async def gemini_receiver():
                 nonlocal stream_sid
                 try:
-                    async for response in session.receive():
-                        server_content = response.server_content
-                        if server_content is None:
-                            continue
-
-                        # Log transcription if available
-                        model_turn = server_content.model_turn
-                        
-                        # Handle turn completions or interruptions if needed
-                        # In SDK, turn_complete is boolean
-                        if server_content.turn_complete:
-                             logger.info("Turn complete")
-
-                        if model_turn:
-                            for part in model_turn.parts:
-                                if part.text:
-                                    logger.info(f"Gemini Text/Transcript: {part.text}")
-                                    
-                                if part.inline_data:
-                                    mime_type = part.inline_data.mime_type
-                                    if mime_type.startswith("audio/pcm"):
-                                        pcm_data = part.inline_data.data
-                                        # Convert 24k PCM -> 8k u-law
-                                        ulaw_data = adk_pcm24k_to_twilio_ulaw8k(pcm_data)
-                                        
-                                        # Encode base64
-                                        payload = base64.b64encode(ulaw_data).decode("ascii")
-                                        
-                                        if stream_sid:
-                                            await ws.send_json({
-                                                "event": "media",
-                                                "streamSid": stream_sid,
-                                                "media": {
-                                                    "payload": payload
-                                                }
-                                            })
-                        
+                    async for part in session.receive():
+                        if part.server_content is not None:
+                            logger.info(f"Received server_content: {part.server_content}")
+                            model_turn = part.server_content.model_turn
+                            if model_turn is not None:
+                                for part in model_turn.parts:
+                                    if part.inline_data is not None:
+                                        mime_type = part.inline_data.mime_type
+                                        if mime_type.startswith("audio/pcm"):
+                                            pcm_data = part.inline_data.data
+                                            logger.info(f"Received audio chunk from Gemini: {len(pcm_data)} bytes")
+                                            # Convert 24k PCM -> 8k u-law
+                                            ulaw_data = adk_pcm24k_to_twilio_ulaw8k(pcm_data)
+                                            
+                                            # Encode base64
+                                            payload = base64.b64encode(ulaw_data).decode("ascii")
+                                            
+                                            if stream_sid:
+                                                await ws.send_json({
+                                                    "event": "media",
+                                                    "streamSid": stream_sid,
+                                                    "media": {
+                                                        "payload": payload
+                                                    }
+                                                })
                 except Exception as e:
                     logger.error(f"Error in gemini_receiver: {e}")
 
-            # Run both loops
+            # Run both receivers
             await asyncio.gather(twilio_receiver(), gemini_receiver())
-
-    except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
+            
     except Exception as e:
-        logger.error(f"Error in twilio_websocket: {e}")
+        logger.error(f"Error in connect_gemini: {e}")
+        import traceback
+        traceback.print_exc()
