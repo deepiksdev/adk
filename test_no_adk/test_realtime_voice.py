@@ -1,133 +1,128 @@
 
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import asyncio
-import os
 import pyaudio
-import logging
-from google import genai
-from google.genai import types
+import os
+import sys
 from dotenv import load_dotenv
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from google import genai
+from google.genai import types
 
+# Load environment variables
 load_dotenv()
 
-# Audio Configuration
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-SEND_RATE = 16000
-RECEIVE_RATE = 24000
-CHUNK_SIZE = 512
+if "GOOGLE_API_KEY" not in os.environ:
+    print("Error: GOOGLE_API_KEY not found in environment variables.")
+    sys.exit(1)
 
+client = genai.Client(http_options={"api_version": "v1alpha"})
 MODEL = "gemini-2.0-flash-exp"
 
-async def main():
+# Audio config
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000
+CHUNK = 512
+
+async def audio_loop():
     p = pyaudio.PyAudio()
-
+    
     try:
-        # Open Input Stream (Mic)
-        input_stream = p.open(
+        microphone = p.open(
             format=FORMAT,
             channels=CHANNELS,
-            rate=SEND_RATE,
+            rate=RATE,
             input=True,
-            frames_per_buffer=CHUNK_SIZE
+            frames_per_buffer=CHUNK,
         )
-        logger.info(f"Microphone input opened: {SEND_RATE}Hz")
-
-        # Open Output Stream (Speaker)
-        output_stream = p.open(
+        
+        speaker = p.open(
             format=FORMAT,
             channels=CHANNELS,
-            rate=RECEIVE_RATE,
+            rate=24000, 
             output=True,
-            frames_per_buffer=CHUNK_SIZE
-        )
-        logger.info(f"Speaker output opened: {RECEIVE_RATE}Hz")
-
-        client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"), http_options={"api_version": "v1alpha"})
-
-        config = types.LiveConnectConfig(
-            system_instruction=types.Content(parts=[types.Part(text="You are a helpful and concise voice assistant.")]),
-            response_modalities=[types.Modality.AUDIO],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
-                )
-            ),
-            realtime_input_config=types.RealtimeInputConfig(
-                automatic_activity_detection=types.AutomaticActivityDetection(
-                    disabled=False,
-                    start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
-                    end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
-                    prefix_padding_ms=150,
-                    silence_duration_ms=400,
-                )
-            )
         )
 
-        logger.info(f"Connecting to Gemini ({MODEL})...")
-        async with client.aio.live.connect(model=MODEL, config=config) as session:
-            logger.info("Connected to Gemini! Start speaking...")
+        print("Connecting to Gemini...")
+        async with client.aio.live.connect(model=MODEL, config={"response_modalities": ["AUDIO"]}) as session:
+             print("Connected! Start speaking.")
+             
+             async def send_audio():
+                 while True:
+                     try:
+                         data = await asyncio.to_thread(microphone.read, CHUNK, exception_on_overflow=False)
+                         await session.send_realtime_input(media=types.Blob(data=data, mime_type="audio/pcm"))
+                     except asyncio.CancelledError:
+                         break
+                     except Exception as e:
+                         print(f"Error sending audio: {e}")
+                         break
 
-            async def send_audio_loop():
-                try:
-                    while True:
-                        # Read from Mic
-                        data = await asyncio.to_thread(input_stream.read, CHUNK_SIZE, exception_on_overflow=False)
-                        
-                        # Send to Gemini
-                        await session.send_realtime_input(media=types.Blob(data=data, mime_type=f"audio/pcm;rate={SEND_RATE}"))
-                except asyncio.CancelledError:
-                    pass
-                except Exception as e:
-                    logger.error(f"Error in send_audio_loop: {e}")
+             async def receive_audio():
+                 while True:
+                     try:
+                         async for response in session.receive():
+                             if response.server_content is None:
+                                 continue
+                             
+                             model_turn = response.server_content.model_turn
+                             if model_turn:
+                                 for part in model_turn.parts:
+                                     if part.inline_data:
+                                         await asyncio.to_thread(speaker.write, part.inline_data.data)
+                                         
+                             if response.server_content.turn_complete:
+                                 # Optional: logic for turn complete
+                                 pass
+                     except asyncio.CancelledError:
+                        break
+                     except Exception as e:
+                        print(f"Error receiving audio: {e}")
+                        break
 
-            async def receive_audio_loop():
-                try:
-                    async for part in session.receive():
-                        if part.server_content and part.server_content.model_turn:
-                            for p in part.server_content.model_turn.parts:
-                                if p.inline_data:
-                                    # Write to Speaker
-                                    await asyncio.to_thread(output_stream.write, p.inline_data.data)
-                                    
-                        if part.server_content and part.server_content.turn_complete:
-                            # logger.info("Turn complete")
-                            pass
-                except asyncio.CancelledError:
-                    pass
-                except Exception as e:
-                    logger.error(f"Error in receive_audio_loop: {e}")
-
-            # Run loops
-            send_task = asyncio.create_task(send_audio_loop())
-            receive_task = asyncio.create_task(receive_audio_loop())
-
-            try:
-                # Keep running until Ctrl+C
-                while True:
-                    await asyncio.sleep(1)
-            except KeyboardInterrupt:
-                logger.info("Stopping...")
-            finally:
-                send_task.cancel()
-                receive_task.cancel()
-                await asyncio.gather(send_task, receive_task, return_exceptions=True)
+             # Run concurrent tasks
+             send_task = asyncio.create_task(send_audio())
+             receive_task = asyncio.create_task(receive_audio())
+             
+             try:
+                 await asyncio.gather(send_task, receive_task)
+             except asyncio.CancelledError:
+                 pass
+             finally:
+                 send_task.cancel()
+                 receive_task.cancel()
 
     except Exception as e:
-        logger.error(f"Error: {e}")
+        print(f"Main loop error: {e}")
     finally:
-        # cleanup
-        if 'input_stream' in locals():
-            input_stream.stop_stream()
-            input_stream.close()
-        if 'output_stream' in locals():
-            output_stream.stop_stream()
-            output_stream.close()
-        p.terminate()
-        logger.info("Audio streams closed.")
+        print("Closing streams...")
+        try:
+            if 'microphone' in locals():
+                microphone.stop_stream()
+                microphone.close()
+            if 'speaker' in locals():
+                speaker.stop_stream()
+                speaker.close()
+            p.terminate()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(audio_loop())
+    except KeyboardInterrupt:
+        print("\nExiting...")
