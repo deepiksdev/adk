@@ -50,7 +50,7 @@ class LoggingPlugin(BasePlugin):
     Args:
       name: The name of the plugin instance.
     """
-    print("Logging plugin initialized")
+    #print("Logging plugin initialized")
     super().__init__(name)
     self._metrics = {}
 
@@ -61,6 +61,7 @@ class LoggingPlugin(BasePlugin):
       user_message: types.Content,
   ) -> Optional[types.Content]:
     """Log user message and invocation start."""
+    '''
     self._log(f"🚀 USER MESSAGE RECEIVED")
     self._log(f"   Invocation ID: {invocation_context.invocation_id}")
     self._log(f"   Session ID: {invocation_context.session.id}")
@@ -73,6 +74,7 @@ class LoggingPlugin(BasePlugin):
     self._log(f"   User Content: {self._format_content(user_message)}")
     if invocation_context.branch:
       self._log(f"   Branch: {invocation_context.branch}")
+    '''
     return None
 
   async def before_run_callback(
@@ -91,12 +93,13 @@ class LoggingPlugin(BasePlugin):
       self, *, invocation_context: InvocationContext, event: Event
   ) -> Optional[Event]:
     """Log events yielded from the runner."""
+    '''
     self._log(f"📢 EVENT YIELDED")
     self._log(f"   Event ID: {event.id}")
     self._log(f"   Author: {event.author}")
     self._log(f"   Content: {self._format_content(event.content)}")
     self._log(f"   Final Response: {event.is_final_response()}")
-
+    '''
     if event.get_function_calls():
       func_calls = [fc.name for fc in event.get_function_calls()]
       self._log(f"   Function Calls: {func_calls}")
