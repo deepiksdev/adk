@@ -50,45 +50,24 @@ try:
     # Patch the BASE class Runner, as run_live is likely defined there
     if not hasattr(Runner, "_original_run_live"):
         Runner._original_run_live = Runner.run_live
-    if not hasattr(Runner, "_original_run_async"):
-        Runner._original_run_async = Runner.run_async
-
+        
     async def patched_run_live(self, session, live_request_queue, run_config=None):
-        app_name = getattr(self, 'app_name', 'UNKNOWN')
-        print(f"PATCH: run_live called on {self.__class__.__name__} for app: {app_name}")
+        print(f"PATCH: run_live called on {self.__class__.__name__} for app: {getattr(self, 'app_name', 'UNKNOWN')}")
         
-        # Loose check for voicemail agent
-        if "voicemail" in app_name:
+        # Check if this runner is for the voicemail_agent
+        if getattr(self, 'app_name', '') == "voicemail_agent":
+            # If no config provided (default from Web UI), inject ours
             if run_config is None:
-                print("PATCH: Injecting French RunConfig into Runner (run_live)!")
+                print("PATCH: Injecting French RunConfig into Runner!")
                 run_config = voicemail_run_config
-            else:
-                print(f"PATCH: RunConfig already present in run_live: {run_config}. Merging/Overwriting...")
-                # Ensure voice settings are applied
-                if hasattr(run_config, 'speech_config') and voicemail_run_config.speech_config:
-                   run_config.speech_config = voicemail_run_config.speech_config
         
+        # Call original using Keyword Arguments (signature enforces it)
         async for item in Runner._original_run_live(self, session=session, live_request_queue=live_request_queue, run_config=run_config):
             yield item
-
-    async def patched_run_async(self, *args, **kwargs):
-        app_name = getattr(self, 'app_name', 'UNKNOWN')
-        print(f"PATCH: run_async called on {self.__class__.__name__} for app: {app_name}")
-        
-        if "voicemail" in app_name:
-            run_config = kwargs.get('run_config')
-            if run_config:
-                 print("PATCH: Merging French RunConfig into Runner (run_async)!")
-                 if hasattr(run_config, 'speech_config') and voicemail_run_config.speech_config:
-                    run_config.speech_config = voicemail_run_config.speech_config
-        
-        return await Runner._original_run_async(self, *args, **kwargs)
-
-    # Apply patch to Runner
+            
+    # Apply patch to Runner (which InMemoryRunner inherits from)
     Runner.run_live = patched_run_live
-    Runner.run_async = patched_run_async
-    
-    print("PATCH: Runner (run_live & run_async) patch successfully applied.")
+    print("PATCH: Runner (base) patch successfully applied.")
 
 except ImportError as e:
     print(f"PATCH: Could not import dependencies: {e}")
