@@ -34,6 +34,48 @@ app = get_fast_api_app(
     extra_plugins=["plugins.logging_plugin.LoggingPlugin"]
 )
 
+# --- PATCH FOR WEB UI CONFIGURATION ---
+# --- PATCH FOR WEB UI CONFIGURATION ---
+# --- PATCH FOR WEB UI CONFIGURATION ---
+try:
+    print("PATCH: Attempting to patch Runner/InMemoryRunner for French voice...")
+    
+    import google.adk.runners
+    from google.adk.runners import InMemoryRunner, Runner
+    from agents.voicemail_agent.agent import run_config as voicemail_run_config
+
+    print(f"PATCH: InMemoryRunner path: {InMemoryRunner}")
+    print(f"PATCH: Runner path: {Runner}")
+
+    # Patch the BASE class Runner, as run_live is likely defined there
+    if not hasattr(Runner, "_original_run_live"):
+        Runner._original_run_live = Runner.run_live
+        
+    async def patched_run_live(self, session, live_request_queue, run_config=None):
+        print(f"PATCH: run_live called on {self.__class__.__name__} for app: {getattr(self, 'app_name', 'UNKNOWN')}")
+        
+        # Check if this runner is for the voicemail_agent
+        if getattr(self, 'app_name', '') == "voicemail_agent":
+            # If no config provided (default from Web UI), inject ours
+            if run_config is None:
+                print("PATCH: Injecting French RunConfig into Runner!")
+                run_config = voicemail_run_config
+        
+        # Call original using Keyword Arguments (signature enforces it)
+        async for item in Runner._original_run_live(self, session=session, live_request_queue=live_request_queue, run_config=run_config):
+            yield item
+            
+    # Apply patch to Runner (which InMemoryRunner inherits from)
+    Runner.run_live = patched_run_live
+    print("PATCH: Runner (base) patch successfully applied.")
+
+except ImportError as e:
+    print(f"PATCH: Could not import dependencies: {e}")
+except Exception as e:
+    print(f"PATCH: Failed to patch Runner: {e}")
+# ----------------------------------------
+# ----------------------------------------
+
 @app.get("/hello")
 def hello():
     """Simple Hello World endpoint for testing custom routes."""

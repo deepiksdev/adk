@@ -1,5 +1,7 @@
 import os
 from google.adk.agents import Agent
+from google.adk.agents.run_config import RunConfig, StreamingMode
+from google.genai import types
 from .tools import send_voicemail_email
 
 user_name = os.environ.get("VOICEMAIL_USER_NAME", "User")
@@ -14,7 +16,30 @@ Si le correspondant souhaite laisser un message, écoute attentivement. Une fois
 
 Si le correspondant a des questions, essaie d'y répondre poliment tout en précisant que tu es une intelligence artificielle agissant pour le compte de {user_name}.
 
-Sois toujours poli et professionnel."""
+Sois toujours poli et professionnel.
+Tu dois TOUJOURS répondre en français."""
+
+speech_config = types.SpeechConfig(
+    voice_config=types.VoiceConfig(
+        prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Aoede")
+    ),
+    language_code="fr-FR",
+)
+
+run_config = RunConfig(
+    speech_config=speech_config,
+    streaming_mode=StreamingMode.BIDI,
+    # Standard settings for activity detection
+    realtime_input_config=types.RealtimeInputConfig(
+        automatic_activity_detection=types.AutomaticActivityDetection(
+            disabled=False,
+            start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
+            end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
+            prefix_padding_ms=150,
+            silence_duration_ms=400,
+        )
+    )
+)
 
 root_agent = Agent(
     name="voicemail_agent",
@@ -23,3 +48,7 @@ root_agent = Agent(
     instruction=instruction,
     tools=[send_voicemail_email]
 )
+
+
+
+
