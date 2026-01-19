@@ -2,6 +2,7 @@ import logging
 import os
 import asyncio
 import base64
+import importlib
 from uuid import uuid4
 
 from fastapi import Request, WebSocket, WebSocketDisconnect
@@ -102,7 +103,7 @@ def hello():
     """Simple Hello World endpoint for testing custom routes."""
     return {"message": "Hello World"}
 
-@app.post("/connect")
+@app.get("/connect")
 def create_call(req: Request):
     """Generate TwiML to connect a call to a Twilio Media Stream"""
     print("HANDLING CONNECT REQUEST")
@@ -110,7 +111,11 @@ def create_call(req: Request):
     scheme = req.url.scheme
     #ws_protocol = "ws" if scheme == "http" else "wss"
     ws_protocol= "wss"
+    
+    agent_name = req.query_params.get("agent")
     ws_url = f"{ws_protocol}://{host}/twilio/stream"
+    if agent_name:
+        ws_url += f"?agent={agent_name}"
 
     stream = Stream(url=ws_url)
     connect = Connect()
@@ -135,12 +140,47 @@ async def twilio_websocket(ws: WebSocket):
     user_id = uuid4().hex # Fake user ID for this example
     
     
-    # Check if we should use the voicemail agent
-    is_voicemail_mode = os.environ.get("USE_VOICEMAIL_AGENT", "false").lower() == "true"
+     
+    # Check for agent param
+    agent_name = ws.query_params.get("agent")
     
-    if voicemail_root_agent:
+    if agent_name:
+        try:
+            logger.info(f"Dynamically loading agent: {agent_name}")
+            agent_module = importlib.import_module(f"agents.{agent_name}.agent")
+            # Assuming the agent module has a run_agent or default entry point, but here we probably need the object expected by start_agent_session_with_agent
+            # usually 'root_agent' based on previous code usage
+             
+            if hasattr(agent_module, "root_agent"):
+                loaded_agent = getattr(agent_module, "root_agent")
+                live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, loaded_agent, agent_name=agent_name)
+                
+                # If it is voicemail agent, we might want to keep the specific greeting interaction
+                # Or maybe we generalize. The issue says: 
+                # "make it possible to create a twilio session giving the name of the agent (for the time being, use "voicemail_agent")"
+                
+                if agent_name == "voicemail_agent":
+                     initial_message = text_to_content(
+                        f"La conversation commence. Dis EXACTEMENT la phrase suivante pour accueillir le correspondant : 'Bonjour, je suis une IA répondeur téléphonique. {os.environ.get('VOICEMAIL_USER_NAME', 'User')} n'est pas disponible. Voulez-vous que je prenne un message à son intention, ou avez-vous des questions ?'", 
+                        "user"
+                    )
+                     live_request_queue.send_content(initial_message)
+                else:
+                     # For other agents, maybe just a standard start?
+                     pass
+
+            else:
+                 logger.error(f"Agent module {agent_name} does not have 'root_agent'")
+                 await ws.close()
+                 return
+
+        except ImportError:
+            logger.error(f"Could not import agent: {agent_name}")
+            await ws.close()
+            return
+    elif voicemail_root_agent:
         # Start a session with the voicemail agent
-        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, voicemail_root_agent)
+        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, voicemail_root_agent, agent_name="voicemail_agent")
         # For voicemail, we let the instruction handle the first greeting naturally or we can force it.
         # The issue specifies: It should start by replying in French...
         # So we send an initial trigger.
