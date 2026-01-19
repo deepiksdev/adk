@@ -19,6 +19,8 @@ try:
 except ImportError:
     voicemail_root_agent = None
 
+
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,7 +44,7 @@ try:
     
     import google.adk.runners
     from google.adk.runners import InMemoryRunner, Runner
-    from agents.voicemail_agent.agent import run_config as voicemail_run_config
+    import importlib
 
     print(f"PATCH: InMemoryRunner path: {InMemoryRunner}")
     print(f"PATCH: Runner path: {Runner}")
@@ -52,22 +54,33 @@ try:
         Runner._original_run_live = Runner.run_live
         
     async def patched_run_live(self, session, live_request_queue, run_config=None):
-        print(f"PATCH: run_live called on {self.__class__.__name__} for app: {getattr(self, 'app_name', 'UNKNOWN')}")
+        app_name = getattr(self, "app_name", None)
+        print(f"PATCH: run_live called on {self.__class__.__name__} for app: {app_name}")
         
-        # Check if this runner is for the voicemail_agent
-        if getattr(self, 'app_name', '') == "voicemail_agent":
-            print("PATCH: run_live called, will check run_config", run_config)
-            # If no config provided (default from Web UI), inject ours
-            if run_config is None:
-                print("PATCH: Injecting French RunConfig into Runner!")
-                run_config = voicemail_run_config
-            else:
-                print("PATCH: RunConfig already present. Overwriting speech_config and realtime_input_config...")
-                # Overwrite specific settings to enforce French
-                if voicemail_run_config.speech_config:
-                    run_config.speech_config = voicemail_run_config.speech_config
-                if voicemail_run_config.realtime_input_config:
-                    run_config.realtime_input_config = voicemail_run_config.realtime_input_config
+        if app_name:
+            try:
+                # Dynamically import the agent module
+                agent_module = importlib.import_module(f"agents.{app_name}.agent")
+                
+                # Check for root_run_config in the agent module
+                if hasattr(agent_module, "root_run_config"):
+                    root_run_config = getattr(agent_module, "root_run_config")
+                    print(f"PATCH: Found root_run_config for {app_name}: {root_run_config}")
+                    
+                    if run_config is None:
+                        print(f"PATCH: Injecting root_run_config for {app_name}")
+                        run_config = root_run_config
+                    else:
+                        print(f"PATCH: Merging into existing run_config for {app_name}")
+                        # Overwrite specific settings if they exist in root_run_config
+                        if root_run_config.speech_config:
+                            run_config.speech_config = root_run_config.speech_config
+                        if root_run_config.realtime_input_config:
+                            run_config.realtime_input_config = root_run_config.realtime_input_config
+            except ImportError:
+                 print(f"PATCH: Could not import module agents.{app_name}.agent")
+            except Exception as e:
+                print(f"PATCH: Error checking for root_run_config: {e}")
         
         # Call original using Keyword Arguments (signature enforces it)
         async for item in Runner._original_run_live(self, session=session, live_request_queue=live_request_queue, run_config=run_config):

@@ -26,7 +26,7 @@ speech_config = types.SpeechConfig(
     language_code="fr-FR",
 )
 
-run_config = RunConfig(
+root_run_config = RunConfig(
     speech_config=speech_config,
     streaming_mode=StreamingMode.BIDI,
     # Standard settings for activity detection
