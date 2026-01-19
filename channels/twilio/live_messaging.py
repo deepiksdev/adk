@@ -19,13 +19,13 @@ APP_NAME = "THE VOICE AGENT"
 LiveEvents = AsyncGenerator[Event, None]
 
 async def start_agent_session_with_agent(
-    user_id: str, session_id: str, agent
+    user_id: str, session_id: str, agent, agent_name: str = APP_NAME
 ) -> tuple[LiveEvents, LiveRequestQueue]:
     """Starts an agent session with a specific agent"""
     # Create a Runner
     runner = InMemoryRunner(
         agent,
-        app_name=APP_NAME,
+        app_name=agent_name,
         plugins=[]
     )
     
