@@ -7,7 +7,7 @@ from google.adk.agents.live_request_queue import LiveRequestQueue
 from google.genai import types
 from google.genai.types import Part, Blob, Content
 from pydantic import BaseModel, Field
-from .agent import root_agent
+from agents.search_web_agent.agent import root_agent
 
 def text_to_content(text: str, role: Literal["user", "model"] = "user") -> Content:
     """Helper to create a Content object from text"""

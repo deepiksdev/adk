@@ -10,8 +10,8 @@ from google.adk.cli.fast_api import get_fast_api_app
 
 # Twilio imports
 from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
-from agents.twilio_voice_agent.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content, start_agent_session_with_agent
-from agents.twilio_voice_agent.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
+from channels.twilio.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content, start_agent_session_with_agent
+from channels.twilio.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
 # Import voicemail agent if needed
 try:
@@ -105,6 +105,7 @@ def hello():
 @app.post("/connect")
 def create_call(req: Request):
     """Generate TwiML to connect a call to a Twilio Media Stream"""
+    print("HANDLING CONNECT REQUEST")
     host = req.url.hostname
     scheme = req.url.scheme
     #ws_protocol = "ws" if scheme == "http" else "wss"
