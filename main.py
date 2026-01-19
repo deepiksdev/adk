@@ -61,6 +61,13 @@ try:
             if run_config is None:
                 print("PATCH: Injecting French RunConfig into Runner!")
                 run_config = voicemail_run_config
+            else:
+                print("PATCH: RunConfig already present. Overwriting speech_config and realtime_input_config...")
+                # Overwrite specific settings to enforce French
+                if voicemail_run_config.speech_config:
+                    run_config.speech_config = voicemail_run_config.speech_config
+                if voicemail_run_config.realtime_input_config:
+                    run_config.realtime_input_config = voicemail_run_config.realtime_input_config
         
         # Call original using Keyword Arguments (signature enforces it)
         async for item in Runner._original_run_live(self, session=session, live_request_queue=live_request_queue, run_config=run_config):
