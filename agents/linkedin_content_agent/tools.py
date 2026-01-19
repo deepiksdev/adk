@@ -208,3 +208,81 @@ def save_content_to_state(content: str, content_type: str, tool_context: ToolCon
             "status": "error",
             "error": str(e)
         }
+
+
+
+def generate_html_preview(post_content: str, tool_context: ToolContext) -> Dict[str, Any]:
+    """
+    Generate a LinkedIn-style HTML preview of the post.
+
+    Args:
+        post_content: The text content of the LinkedIn post.
+        tool_context: The tool context.
+
+    Returns:
+        Dict containing the path to the generated HTML file.
+    """
+    try:
+        # Retrieve image URL from state
+        image_info = tool_context.state.get("generated_image", {})
+        image_url = image_info.get("url", "")
+        
+        # Define paths
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(script_dir, 'linkedin_post_template.html')
+        output_dir = os.path.join(script_dir, 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        # Unique filename using timestamp
+        timestamp = int(os.path.getmtime(template_path)) if os.path.exists(template_path) else 0 
+        # Actually better to use UUID or current time
+        import time
+        filename = f"linkedin_preview_{int(time.time())}.html"
+        output_file = os.path.join(output_dir, filename)
+
+        # Read Template
+        if not os.path.exists(template_path):
+             return {"status": "error", "error": "Template file not found."}
+
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+
+        # Replace Placeholders
+        html_content = html_content.replace('{{ POST_CONTENT }}', post_content)
+        html_content = html_content.replace('{{ IMAGE_URL }}', image_url)
+        
+        if image_url:
+            html_content = html_content.replace('{% if IMAGE_URL %}', '').replace('{% else %}', '<!--').replace('{% endif %}', '-->')
+        else:
+            html_content = html_content.replace('{% if IMAGE_URL %}', '<!--').replace('{% else %}', '-->').replace('{% endif %}', '')
+
+        # Save Output
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+            
+        return {
+            "status": "success",
+            "message": "HTML preview generated successfully.",
+            "file_path": output_file,
+            "preview_url": f"file:///{output_file.replace(os.sep, '/')}"
+        }
+
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+def generate_nano_banana_image(prompt: str, tool_context: ToolContext) -> Dict[str, Any]:
+
+    """
+    Generate an image using the "Nano Banana" style (vibrant, fruity, abstract).
+
+    Args:
+        prompt: The base prompt for the image
+        tool_context: The tool context for accessing ADK features
+
+    Returns:
+        Dict containing image generation results
+    """
+    nano_banana_style = "style of Nano Banana, vibrant colors, yellow and pop art aesthetics, creative, abstract, fruity undertones, high energy"
+    enhanced_prompt = f"{prompt}. {nano_banana_style}"
+
+    # Reuse the existing DALL-E integration but with the Nano Banana prompt
+    return generate_image(enhanced_prompt, tool_context)
