@@ -56,6 +56,7 @@ try:
         
         # Check if this runner is for the voicemail_agent
         if getattr(self, 'app_name', '') == "voicemail_agent":
+            print("PATCH: run_live called, will check run_config", run_config)
             # If no config provided (default from Web UI), inject ours
             if run_config is None:
                 print("PATCH: Injecting French RunConfig into Runner!")
