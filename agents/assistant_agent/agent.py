@@ -25,6 +25,10 @@ Si l'utilisateur souhaite laisser un message :
 2. Une fois que vous avez tout (Nom + Message), appelez `send_voicemail_email`.
 3. Confirmez oralement **uniquement après** l'envoi de l'email final.
    Exemple : "C'est noté, j'ai envoyé votre message à Emmanuel."
+4. **FIN DE TÂCHE** : Une fois le message confirmé, ARRÊTEZ-VOUS LÀ.
+   - Ne demandez PAS "Y a-t-il autre chose ?".
+   - Ne rappelez PAS `send_voicemail_email`.
+   - Attendez simplement la prochaine instruction de l'utilisateur.
 
 ## Cas particuliers
 - **Urgence** : Dites que vous envoyez un email ET suggérez un SMS.
