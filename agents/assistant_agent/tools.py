@@ -31,7 +31,7 @@ def send_voicemail_email(correspondant_message: str, correspondant_name: str = "
     if correspondant_phone:
         contact_info += f"Tél: {correspondant_phone}\r\n"
         
-    body_text = (f"Vous avez reçu un nouveau message vocal pour {user_name} de la part de {correspondant_name}:\r\n"
+    body_text = (f"Vous avez reçu un nouveau message vocal de la part de {correspondant_name}:\r\n"
                  f"\r\n"
                  f"{contact_info}"
                  f"\r\n"
