@@ -22,13 +22,21 @@ async def save_web_content(tool_context: ToolContext, html_code: str, file_name:
     # Create the artifact using the ADK service via ToolContext
     # This automatically handles app_name, user_id, and session scoping
     try:
+        print(f"DEBUG: Saving artifact - Filename: {file_name}")
+        print(f"DEBUG: ToolContext Info - UserID: {tool_context.user_id}")
+        if tool_context.session:
+             print(f"DEBUG: ToolContext Info - SessionID: {tool_context.session.id}")
+        
         await tool_context.save_artifact(
             filename=file_name,
             artifact=types.Part.from_text(text=html_code),
             custom_metadata={"type": "web_page", "language": "html"}
         )
+        print(f"DEBUG: Artifact saved successfully via ToolContext")
     except Exception as e:
         print(f"Warning: Failed to save to artifact service: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Also write to local disk for immediate browser preview
     # This is critical for the "Live Preview" feature mentioned in the issue
@@ -62,6 +70,9 @@ if __name__ == "__main__":
     
     # Simple Mock for ToolContext
     class MockToolContext:
+        user_id = "test_user"
+        session = type('obj', (object,), {'id': 'test_session'})
+        
         async def save_artifact(self, filename, artifact, custom_metadata=None):
             print(f"Mock: Saving artifact {filename} with metadata {custom_metadata}")
             return "mock_version_id"
