@@ -42,7 +42,7 @@ root_run_config = RunConfig(
 )
 
 root_agent = Agent(
-    name="voicemail_agent",
+    name="assistant_agent",
     model="gemini-2.0-flash-exp",
     description=f"Agent répondeur téléphonique pour {user_name}.",
     instruction=instruction,

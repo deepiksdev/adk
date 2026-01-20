@@ -1,11 +1,11 @@
 import os
 import unittest
 from unittest.mock import patch, MagicMock
-from agents.voicemail_agent.tools import send_voicemail_email
+from agents.medical_agent.tools import send_voicemail_email
 
 class TestVoicemailTools(unittest.TestCase):
 
-    @patch('agents.voicemail_agent.tools.boto3.client')
+    @patch('agents.medical_agent.tools.boto3.client')
     @patch.dict(os.environ, {
         "VOICEMAIL_RECIPIENT_EMAIL": "recipient@example.com",
         "AWS_SES_SOURCE_EMAIL": "source@example.com",
@@ -32,7 +32,7 @@ class TestVoicemailTools(unittest.TestCase):
         self.assertIn("TestUser", kwargs['Message']['Subject']['Data'])
         self.assertIn("Ceci est un message de test.", kwargs['Message']['Body']['Text']['Data'])
 
-    @patch('agents.voicemail_agent.tools.boto3.client')
+    @patch('agents.medical_agent.tools.boto3.client')
     @patch.dict(os.environ, {
         "VOICEMAIL_RECIPIENT_EMAIL": "recipient@example.com",
         "AWS_SES_SOURCE_EMAIL": "source@example.com"

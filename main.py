@@ -14,11 +14,11 @@ from twilio.twiml.voice_response import Connect, Stream, VoiceResponse
 from channels.twilio.live_messaging import AgentEvent, agent_to_client_messaging, send_pcm_to_agent, start_agent_session, text_to_content, start_agent_session_with_agent
 from channels.twilio.audio import adk_pcm24k_to_twilio_ulaw8k, twilio_ulaw8k_to_adk_pcm16k
 
-# Import voicemail agent if needed
+# Import assistant agent if needed
 try:
-    from agents.voicemail_agent.agent import root_agent as voicemail_root_agent
+    from agents.assistant_agent.agent import root_agent as assistant_root_agent
 except ImportError:
-    voicemail_root_agent = None
+    assistant_root_agent = None
 
 
 
@@ -159,7 +159,7 @@ async def twilio_websocket(ws: WebSocket):
                 # Or maybe we generalize. The issue says: 
                 # "make it possible to create a twilio session giving the name of the agent (for the time being, use "voicemail_agent")"
                 
-                if agent_name == "voicemail_agent":
+                if agent_name == "assistant_agent":
                      initial_message = text_to_content(
                         f"La conversation commence. Dis EXACTEMENT la phrase suivante pour accueillir le correspondant : 'Bonjour, je suis une IA répondeur téléphonique. {os.environ.get('VOICEMAIL_USER_NAME', 'User')} n'est pas disponible. Voulez-vous que je prenne un message à son intention, ou avez-vous des questions ?'", 
                         "user"
@@ -178,9 +178,9 @@ async def twilio_websocket(ws: WebSocket):
             logger.error(f"Could not import agent: {agent_name}")
             await ws.close()
             return
-    elif voicemail_root_agent:
-        # Start a session with the voicemail agent
-        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, voicemail_root_agent, agent_name="voicemail_agent")
+    elif assistant_root_agent:
+        # Start a session with the assistant agent
+        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, assistant_root_agent, agent_name="assistant_agent")
         # For voicemail, we let the instruction handle the first greeting naturally or we can force it.
         # The issue specifies: It should start by replying in French...
         # So we send an initial trigger.

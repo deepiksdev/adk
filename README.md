@@ -6,7 +6,7 @@ This repository contains multiple AI agents built with Google's Agent Developmen
 
 - **`my_agent`** - Basic agent example
 - **`linkedin_content_agent`** - LinkedIn content creation agent with DALL-E image generation
-- **`my_blogger_agent`** - Technical blog writing assistant
+- **`blogger_agent`** - Technical blog writing assistant
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ Example:
 ```bash
 adk run my_agent
 adk run linkedin_content_agent
-adk run my_blogger_agent
+adk run blogger_agent
 ```
 
 ### API Server
