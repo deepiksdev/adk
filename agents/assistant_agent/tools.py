@@ -25,10 +25,17 @@ def update_voicemail_data(tool_context: ToolContext, name: Optional[str] = None,
         
     return f"Data saved successfully: {', '.join(saved_items)}."
 
-def send_voicemail_email(correspondant_message: str, correspondant_name: str = "Inconnu", correspondant_email: str = None, correspondant_phone: str = None) -> dict:
+def send_voicemail_email(tool_context: ToolContext, correspondant_message: str, correspondant_name: str = "Inconnu", correspondant_email: str = None, correspondant_phone: str = None) -> dict:
     """
     Sends an email with the content of a voicemail message using AWS SES.
     """
+    # Deduplication check
+    message_id_hash = f"{correspondant_name}|{correspondant_message}"
+    sent_emails = tool_context.state.get("sent_emails", [])
+    if message_id_hash in sent_emails:
+        logger.info(f"Duplicate email blocked for: {message_id_hash}")
+        return {"status": "success", "message": "Email already sent (duplicate blocked)."}
+    
     recipient = os.environ.get("VOICEMAIL_RECIPIENT_EMAIL")
     source = os.environ.get("AWS_SES_SOURCE_EMAIL")
     region = os.environ.get("AWS_REGION", "us-east-1")
@@ -83,5 +90,9 @@ def send_voicemail_email(correspondant_message: str, correspondant_name: str = "
         logger.error(f"Error sending email via SES: {e.response['Error']['Message']}")
         return {"status": "error", "message": str(e.response['Error']['Message'])}
     else:
+        # Mark as sent
+        sent_emails.append(message_id_hash)
+        tool_context.state["sent_emails"] = sent_emails
+        
         logger.info(f"Email sent! Message ID: {response['MessageId']}")
         return {"status": "success", "message_id": response['MessageId']}
