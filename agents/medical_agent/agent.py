@@ -2,7 +2,6 @@ import os
 from google.adk.agents import Agent
 from google.adk.agents.run_config import RunConfig, StreamingMode
 from google.genai import types
-from .tools import send_voicemail_email
 
 user_name = os.environ.get("VOICEMAIL_USER_NAME", "User")
 
@@ -38,8 +37,7 @@ root_agent = Agent(
     name="medical_agent",
     model="gemini-live-2.5-flash-native-audio",
     description=f"Assistant médical.",
-    instruction=instruction,
-    tools=[send_voicemail_email]
+    instruction=instruction
 )
 
 
