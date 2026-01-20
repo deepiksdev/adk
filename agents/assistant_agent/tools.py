@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def send_voicemail_email(correspondant_message: str) -> dict:
+def send_voicemail_email(correspondant_message: str, correspondant_name: str = "Inconnu", correspondant_email: str = None, correspondant_phone: str = None) -> dict:
     """
     Sends an email with the content of a voicemail message using AWS SES.
     """
@@ -23,9 +23,19 @@ def send_voicemail_email(correspondant_message: str) -> dict:
 
     print(f"DEBUG: Config loaded. Recipient: {recipient}, Source: {source}, Region: {region}")
 
-    subject = f"Nouveau message vocal pour {user_name}"
-    body_text = (f"Vous avez reçu un nouveau message vocal pour {user_name}:\r\n"
+    subject = f"Nouveau message vocal de {correspondant_name}"
+    
+    contact_info = ""
+    if correspondant_email:
+        contact_info += f"Email: {correspondant_email}\r\n"
+    if correspondant_phone:
+        contact_info += f"Tél: {correspondant_phone}\r\n"
+        
+    body_text = (f"Vous avez reçu un nouveau message vocal pour {user_name} de la part de {correspondant_name}:\r\n"
                  f"\r\n"
+                 f"{contact_info}"
+                 f"\r\n"
+                 f"Message:\r\n"
                  f"{correspondant_message}\r\n"
                  f"\r\n"
                  f"Bonne journée!")

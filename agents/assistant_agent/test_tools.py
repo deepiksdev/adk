@@ -19,7 +19,12 @@ class TestVoicemailTools(unittest.TestCase):
         mock_ses.send_email.return_value = {'MessageId': '12345'}
 
         # Execute
-        result = send_voicemail_email("Ceci est un message de test.")
+        result = send_voicemail_email(
+            correspondant_message="Ceci est un message de test.",
+            correspondant_name="Jean Dupont",
+            correspondant_email="jean@example.com",
+            correspondant_phone="0123456789"
+        )
 
         # Verify
         self.assertEqual(result['status'], 'success')
@@ -29,8 +34,40 @@ class TestVoicemailTools(unittest.TestCase):
         args, kwargs = mock_ses.send_email.call_args
         self.assertEqual(kwargs['Source'], 'source@example.com')
         self.assertEqual(kwargs['Destination']['ToAddresses'], ['recipient@example.com'])
-        self.assertIn("TestUser", kwargs['Message']['Subject']['Data'])
-        self.assertIn("Ceci est un message de test.", kwargs['Message']['Body']['Text']['Data'])
+        self.assertIn("Jean Dupont", kwargs['Message']['Subject']['Data'])
+        body = kwargs['Message']['Body']['Text']['Data']
+        self.assertIn("Ceci est un message de test.", body)
+        self.assertIn("Jean Dupont", body)
+        self.assertIn("jean@example.com", body)
+        self.assertIn("0123456789", body)
+
+    @patch('agents.assistant_agent.tools.boto3.client')
+    @patch.dict(os.environ, {
+        "VOICEMAIL_RECIPIENT_EMAIL": "recipient@example.com",
+        "AWS_SES_SOURCE_EMAIL": "source@example.com",
+        "AWS_REGION": "us-east-1",
+        "VOICEMAIL_USER_NAME": "TestUser"
+    })
+    def test_send_voicemail_email_defaults(self, mock_boto_client):
+        # Setup mock
+        mock_ses = MagicMock()
+        mock_boto_client.return_value = mock_ses
+        mock_ses.send_email.return_value = {'MessageId': '67890'}
+
+        # Execute with only required argument
+        result = send_voicemail_email(correspondant_message="Juste un message.")
+
+        # Verify
+        self.assertEqual(result['status'], 'success')
+        self.assertEqual(result['message_id'], '67890')
+        
+        args, kwargs = mock_ses.send_email.call_args
+        self.assertIn("Inconnu", kwargs['Message']['Subject']['Data'])
+        body = kwargs['Message']['Body']['Text']['Data']
+        self.assertIn("Juste un message.", body)
+        self.assertIn("Inconnu", body)
+        # Should not have None displayed
+        self.assertNotIn("None", body)
 
     @patch('agents.assistant_agent.tools.boto3.client')
     @patch.dict(os.environ, {
