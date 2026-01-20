@@ -1,11 +1,41 @@
 import os
 import unittest
 from unittest.mock import patch, MagicMock
-from agents.assistant_agent.tools import send_voicemail_email
+from agents.assistant_agent.tools import send_voicemail_email, update_voicemail_data
+from google.adk.tools import ToolContext
 
 class TestVoicemailTools(unittest.TestCase):
 
+    def test_update_voicemail_data(self):
+        # Setup mock ToolContext
+        mock_context = MagicMock(spec=ToolContext)
+        mock_context.state = {}
+
+        # 1. Update Name only
+        result = update_voicemail_data(mock_context, name="Alice")
+        self.assertIn("Alice", mock_context.state["caller_name"])
+        self.assertNotIn("message", mock_context.state)
+        self.assertIn("name", result)
+
+        # 2. Update Message only
+        result = update_voicemail_data(mock_context, message="Hello World")
+        self.assertIn("Hello World", mock_context.state["message"])
+        self.assertIn("message", result)
+        
+        # 3. Update Both
+        mock_context.state = {} # Reset
+        result = update_voicemail_data(mock_context, name="Bob", message="Hi")
+        self.assertEqual(mock_context.state["caller_name"], "Bob")
+        self.assertEqual(mock_context.state["message"], "Hi")
+        self.assertIn("name", result)
+        self.assertIn("message", result)
+
+        # 4. No update
+        result = update_voicemail_data(mock_context)
+        self.assertEqual(result, "No data provided to update.")
+
     @patch('agents.assistant_agent.tools.boto3.client')
+    # ... existing tests ...
     @patch.dict(os.environ, {
         "VOICEMAIL_RECIPIENT_EMAIL": "recipient@example.com",
         "AWS_SES_SOURCE_EMAIL": "source@example.com",

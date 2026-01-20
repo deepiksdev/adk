@@ -1,9 +1,29 @@
 import os
 import boto3
+from typing import Optional
 from botocore.exceptions import ClientError
+from google.adk.tools import ToolContext
 import logging
 
 logger = logging.getLogger(__name__)
+
+def update_voicemail_data(tool_context: ToolContext, name: Optional[str] = None, message: Optional[str] = None) -> str:
+    """
+    Saves the correspondent's name or message to the session state.
+    Call this tool immediately when the user provides either piece of information.
+    """
+    saved_items = []
+    if name:
+        tool_context.state["caller_name"] = name
+        saved_items.append("name")
+    if message:
+        tool_context.state["message"] = message
+        saved_items.append("message")
+    
+    if not saved_items:
+        return "No data provided to update."
+        
+    return f"Data saved successfully: {', '.join(saved_items)}."
 
 def send_voicemail_email(correspondant_message: str, correspondant_name: str = "Inconnu", correspondant_email: str = None, correspondant_phone: str = None) -> dict:
     """
