@@ -68,8 +68,8 @@ class TestVoicemailTools(unittest.TestCase):
         body = kwargs['Message']['Body']['Text']['Data']
         self.assertIn("Ceci est un message de test.", body)
         self.assertIn("Jean Dupont", body)
-        self.assertIn("jean@example.com", body)
-        self.assertIn("0123456789", body)
+        # self.assertIn("jean@example.com", body)  # Removed from body
+        # self.assertIn("0123456789", body)        # Removed from body
 
     @patch('agents.assistant_agent.tools.boto3.client')
     @patch.dict(os.environ, {
