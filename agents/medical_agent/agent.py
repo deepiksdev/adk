@@ -43,7 +43,7 @@ root_run_config = RunConfig(
 
 root_agent = Agent(
     name="medical_agent",
-    model="gemini-2.0-flash-exp",
+    model="gemini-live-2.5-flash-native-audio",
     description=f"Agent répondeur téléphonique pour {user_name}.",
     instruction=instruction,
     tools=[send_voicemail_email]
