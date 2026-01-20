@@ -5,28 +5,24 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 from google.adk.agents import Agent
-from google.adk.artifacts import FileArtifactService
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
 # 1. Initialize the Artifact Service
 # We use FileArtifactService which creates versioned artifacts
 # root_dir corresponds to the base directory for artifacts
-artifact_svc = FileArtifactService(root_dir="./artifacts")
+from google.adk.tools import ToolContext
 
 # 2. Define the HTML Tool
-async def save_web_content(html_code: str, file_name: str = "index.html"):
+async def save_web_content(tool_context: ToolContext, html_code: str, file_name: str = "index.html"):
     """
     Saves or updates HTML code. 
     Use this whenever the user asks for a change or a new page.
     """
-    # Create the artifact using the ADK service
-    # We use dummy values for app_name/user_id since we are running locally/independently
-    # in this example context.
+    # Create the artifact using the ADK service via ToolContext
+    # This automatically handles app_name, user_id, and session scoping
     try:
-        await artifact_svc.save_artifact(
-            app_name="web_designer",
-            user_id="local_user",
+        await tool_context.save_artifact(
             filename=file_name,
             artifact=types.Part.from_text(text=html_code),
             custom_metadata={"type": "web_page", "language": "html"}
@@ -64,6 +60,14 @@ root_agent = Agent(
 if __name__ == "__main__":
     print("Testing save_web_content tool directly...")
     
+    # Simple Mock for ToolContext
+    class MockToolContext:
+        async def save_artifact(self, filename, artifact, custom_metadata=None):
+            print(f"Mock: Saving artifact {filename} with metadata {custom_metadata}")
+            return "mock_version_id"
+
+    mock_context = MockToolContext()
+    
     test_html = """<!DOCTYPE html>
 <html>
 <head><title>Test Page</title></head>
@@ -71,7 +75,8 @@ if __name__ == "__main__":
 </html>"""
     
     # We use a test filename to avoid overwriting real index.html if it exists
-    result = asyncio.run(save_web_content(test_html, "test_index.html"))
+    # Pass mock_context as first argument
+    result = asyncio.run(save_web_content(mock_context, test_html, "test_index.html"))
     print(f"Tool Result: {result}")
     
     import os
