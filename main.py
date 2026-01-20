@@ -5,7 +5,7 @@ import base64
 import importlib
 from uuid import uuid4
 
-from fastapi import Request, WebSocket, WebSocketDisconnect
+from fastapi import Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from google.adk.cli.fast_api import get_fast_api_app
 
@@ -112,10 +112,10 @@ def create_call(req: Request):
     #ws_protocol = "ws" if scheme == "http" else "wss"
     ws_protocol= "wss"
     
-    agent_name = req.query_params.get("agent")
+    agent = req.query_params.get("agent")
     ws_url = f"{ws_protocol}://{host}/twilio/stream"
-    if agent_name:
-        ws_url += f"?agent={agent_name}"
+    if agent:
+        ws_url += f"?agent={agent}"
 
     stream = Stream(url=ws_url)
     connect = Connect()
@@ -127,8 +127,25 @@ def create_call(req: Request):
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 @app.websocket("/twilio/stream")
-async def twilio_websocket(ws: WebSocket):
+async def twilio_websocket(ws: WebSocket, agent: str = Query(None)):
     """Handle Twilio Media Stream WebSocket connection"""
+    
+    # 1. Determine which agent to use
+    agent_object = None
+    agent_name = agent or "assistant_agent" # Default to assistant_agent if not specified
+
+    try:
+        # Dynamically import the agent module
+        module = importlib.import_module(f"agents.{agent_name}.agent")
+        # Assume the agent object is named 'root_agent' inside the module
+        agent_object = getattr(module, "root_agent")
+        logger.info(f"Loaded agent: {agent_name}")
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Failed to load agent '{agent_name}': {e}")
+        # We can't really return a 404 in a websocket, but we can close with a code
+        await ws.close(code=1008, reason=f"Agent '{agent_name}' not found")
+        return
+
     await ws.accept()
     await ws.receive_json() # throw away `connected` event
     
@@ -137,62 +154,9 @@ async def twilio_websocket(ws: WebSocket):
     
     call_sid = start_event["start"]["callSid"]
     stream_sid = start_event["start"]["streamSid"]
-    user_id = uuid4().hex # Fake user ID for this example
-    
-    
-     
-    # Check for agent param
-    agent_name = ws.query_params.get("agent")
-    
-    if agent_name:
-        try:
-            logger.info(f"Dynamically loading agent: {agent_name}")
-            agent_module = importlib.import_module(f"agents.{agent_name}.agent")
-            # Assuming the agent module has a run_agent or default entry point, but here we probably need the object expected by start_agent_session_with_agent
-            # usually 'root_agent' based on previous code usage
-             
-            if hasattr(agent_module, "root_agent"):
-                loaded_agent = getattr(agent_module, "root_agent")
-                live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, loaded_agent, agent_name=agent_name)
-                
-                # If it is voicemail agent, we might want to keep the specific greeting interaction
-                # Or maybe we generalize. The issue says: 
-                # "make it possible to create a twilio session giving the name of the agent (for the time being, use "voicemail_agent")"
-                
-                if agent_name == "assistant_agent":
-                     initial_message = text_to_content(
-                        f"La conversation commence. Dis EXACTEMENT la phrase suivante pour accueillir le correspondant : 'Bonjour, je suis une IA répondeur téléphonique. {os.environ.get('VOICEMAIL_USER_NAME', 'User')} n'est pas disponible. Voulez-vous que je prenne un message à son intention, ou avez-vous des questions ?'", 
-                        "user"
-                    )
-                     live_request_queue.send_content(initial_message)
-                else:
-                     # For other agents, maybe just a standard start?
-                     pass
-
-            else:
-                 logger.error(f"Agent module {agent_name} does not have 'root_agent'")
-                 await ws.close()
-                 return
-
-        except ImportError:
-            logger.error(f"Could not import agent: {agent_name}")
-            await ws.close()
-            return
-    elif assistant_root_agent:
-        # Start a session with the assistant agent
-        live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, assistant_root_agent, agent_name="assistant_agent")
-        # For voicemail, we let the instruction handle the first greeting naturally or we can force it.
-        # The issue specifies: It should start by replying in French...
-        # So we send an initial trigger.
-        initial_message = text_to_content(
-            f"La conversation commence. Dis EXACTEMENT la phrase suivante pour accueillir le correspondant : 'Bonjour, je suis une IA répondeur téléphonique. {os.environ.get('VOICEMAIL_USER_NAME', 'User')} n'est pas disponible. Voulez-vous que je prenne un message à son intention, ou avez-vous des questions ?'", 
-            "user"
-        )
-    else:
-
-        live_events, live_request_queue = await start_agent_session(user_id, call_sid)
-        # Sending an initial message makes the agent speak first when the call starts.
-        initial_message = text_to_content("Présente-toi en Français.", "user")
+    user_id = uuid4().hex # Fake user ID for the time being
+    initial_message = text_to_content("Allo") # This will trigger an initial message from the agent
+    live_events, live_request_queue = await start_agent_session_with_agent(user_id, call_sid, agent_object, agent_name=agent_name)
     
     live_request_queue.send_content(initial_message)
 

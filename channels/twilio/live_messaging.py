@@ -24,7 +24,7 @@ async def start_agent_session_with_agent(
     """Starts an agent session with a specific agent"""
     # Create a Runner
     runner = InMemoryRunner(
-        agent,
+        agent=agent,
         app_name=agent_name,
         plugins=[]
     )
@@ -35,7 +35,7 @@ async def start_agent_session_with_agent(
         user_id=user_id,
         session_id=session_id,
     )
-
+    ''' 
     speech_config = types.SpeechConfig(
         voice_config=types.VoiceConfig(
             # https://ai.google.dev/gemini-api/docs/speech-generation#voices
@@ -65,9 +65,11 @@ async def start_agent_session_with_agent(
         output_audio_transcription=types.AudioTranscriptionConfig(),
         realtime_input_config=realtime_input_config,
     )
+    ''' 
 
     live_request_queue = LiveRequestQueue()
     
+    run_config = None
     live_events = runner.run_live(
         live_request_queue=live_request_queue,
         run_config=run_config,
