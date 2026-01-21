@@ -20,23 +20,20 @@ async def save_web_content(tool_context: ToolContext, html_code: str, file_name:
     Use this whenever the user asks for a change or a new page.
     """
     # Create the artifact using the ADK service via ToolContext
-    # This automatically handles app_name, user_id, and session scoping
+    # We use inline_data to ensure mime_type is set to text/html for the UI
     try:
-        print(f"DEBUG: Saving artifact - Filename: {file_name}")
-        print(f"DEBUG: ToolContext Info - UserID: {tool_context.user_id}")
-        if tool_context.session:
-             print(f"DEBUG: ToolContext Info - SessionID: {tool_context.session.id}")
-        
         await tool_context.save_artifact(
             filename=file_name,
-            artifact=types.Part.from_text(text=html_code),
+            artifact=types.Part(
+                inline_data=types.Blob(
+                    mime_type="text/html",
+                    data=html_code.encode("utf-8")
+                )
+            ),
             custom_metadata={"type": "web_page", "language": "html"}
         )
-        print(f"DEBUG: Artifact saved successfully via ToolContext")
     except Exception as e:
         print(f"Warning: Failed to save to artifact service: {e}")
-        import traceback
-        traceback.print_exc()
     
     # Also write to local disk for immediate browser preview
     # This is critical for the "Live Preview" feature mentioned in the issue
@@ -74,7 +71,12 @@ if __name__ == "__main__":
         session = type('obj', (object,), {'id': 'test_session'})
         
         async def save_artifact(self, filename, artifact, custom_metadata=None):
-            print(f"Mock: Saving artifact {filename} with metadata {custom_metadata}")
+            mime_type = "unknown"
+            if artifact.inline_data:
+                mime_type = artifact.inline_data.mime_type
+                print(f"Mock: Saving artifact {filename} (Mime: {mime_type})")
+            else:
+                print(f"Mock: Saving artifact {filename} (Text)")
             return "mock_version_id"
 
     mock_context = MockToolContext()
