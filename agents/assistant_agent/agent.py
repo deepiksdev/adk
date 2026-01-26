@@ -60,7 +60,7 @@ root_run_config = RunConfig(
 
 root_agent = Agent(
     name="assistant_agent",
-    model="gemini-2.5-flash",
+    model="gemini-live-2.5-flash-native-audio",
     description="Livia, assistante IA d'Emmanuel Prat",
     instruction=instruction,
     tools=[send_voicemail_email, update_voicemail_data]
