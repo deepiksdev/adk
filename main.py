@@ -6,6 +6,7 @@ import importlib
 from uuid import uuid4
 
 from fastapi import Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from google.adk.cli.fast_api import get_fast_api_app
 
@@ -35,6 +36,15 @@ app = get_fast_api_app(
     host="0.0.0.0",
     port=int(os.environ.get("PORT", 8000)),
     extra_plugins=["plugins.logging_plugin.LoggingPlugin"]
+)
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- PATCH FOR WEB UI CONFIGURATION ---
