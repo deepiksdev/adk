@@ -133,3 +133,6 @@ dmypy.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+# ADK
+.adk/
+session.db
