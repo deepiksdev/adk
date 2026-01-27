@@ -126,7 +126,7 @@ def create_call(req: Request):
     ws_url = f"{ws_protocol}://{host}/twilio/stream"
     if agent:
         ws_url += f"?agent={agent}"
-
+    print("WILL STREAM TO: ", ws_url)
     stream = Stream(url=ws_url)
     connect = Connect()
     connect.append(stream)
@@ -139,10 +139,15 @@ def create_call(req: Request):
 @app.websocket("/twilio/stream")
 async def twilio_websocket(ws: WebSocket, agent: str = Query(None)):
     """Handle Twilio Media Stream WebSocket connection"""
+    # This shows the raw path and query string bytes
+    print(f"Full Scope Path: {ws.scope['path']}")
+    print(f"Raw Query String: {ws.scope['query_string']}")
     
     # 1. Determine which agent to use
     agent_object = None
-    agent_name = agent or "assistant_agent" # Default to assistant_agent if not specified
+    # Explicitly get agent from query params as dependency injection might fail or be overridden
+    agent_param = agent or ws.query_params.get("agent")
+    agent_name = agent_param or "assistant_agent" # Default to assistant_agent if not specified
 
     try:
         # Dynamically import the agent module
